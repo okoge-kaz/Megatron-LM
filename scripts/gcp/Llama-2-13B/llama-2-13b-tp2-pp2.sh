@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=llama-2-13b
-#SBATCH --time=1:00:00
+#SBATCH --time=3:00:00
 #SBATCH --partition=a3
 #SBATCH --exclusive
-#SBATCH --nodes 4
+#SBATCH --nodes 2
 #SBATCH --gpus-per-node=8
 #SBATCH --ntasks-per-node=8
 #SBATCH --output=outputs/llama-2-13b/%x-%j.out
@@ -90,9 +90,9 @@ NUM_HEADS=40
 SEQ_LENGTH=4096
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=1   # fixed
+TENSOR_PARALLEL_SIZE=2  # fixed
 PIPELINE_PARALLEL_SIZE=2 # num layers 40: Llama-2 13B
-CONTEXT_PARALLEL_SIZE=2
+CONTEXT_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
 # training config
@@ -101,8 +101,8 @@ GLOBAL_BATCH_SIZE=2048
 TRAIN_STEPS=25000 # e.g. llama: 1T tokens / 4M tokens_per_batch = 250000 steps
 # 今回は約100B Tokensなので 1/10
 
-LR=1e-4
-MIN_LR=3.3e-6
+LR=2e-4
+MIN_LR=6.6e-6
 LR_WARMUP_STEPS=1000
 WEIGHT_DECAY=0.1
 GRAD_CLIP=1
@@ -122,7 +122,7 @@ DATA_PATH=""
 DATA_PATH="${DATA_PATH} 2659052072 ${DATASET_DIR}/ja_wiki_merged_train_text_document"
 
 # job name
-JOB_NAME="llama-2-13b-base-okazaki-lab-cc-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}"
+JOB_NAME="llama-2-13b-base-okazaki-lab-cc-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss-overlap-param-gather-grad-reduce"
 
 # --norm-epsilon 1e-5 : conifg.json (RMS norm)
 
@@ -142,6 +142,8 @@ mpirun -np $NUM_GPUS \
   --context-parallel-size ${CONTEXT_PARALLEL_SIZE} \
   --sequence-parallel \
   --use-distributed-optimizer \
+  --overlap-param-gather \
+  --overlap-grad-reduce \
   --num-layers ${NUM_LAYERS} \
   --hidden-size ${HIDDEN_SIZE} \
   --ffn-hidden-size ${FFN_HIDDEN_SIZE} \
