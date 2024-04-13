@@ -176,12 +176,11 @@ mpirun -np $NUM_GPUS \
   --eval-iters 10 \
   --bf16 \
   --untie-embeddings-and-output-weights \
-  --use-rotary-position-embeddings \
+  --position-embedding-type rope \
   --disable-bias-linear \
   --use-mcore-models \
   --normalization RMSNorm \
   --norm-epsilon 1e-5 \
-  --no-position-embedding \
   --no-masked-softmax-fusion \
   --attention-dropout 0.0 \
   --hidden-dropout 0.0 \
