@@ -151,7 +151,7 @@ class _VocabParallelCrossEntropy(torch.autograd.Function):
 
         if use_z_loss:
             grad_z_loss: torch.Tensor = 2 * 1e-4 * log_Z / sum_exp_logits  # type: ignore
-            grad_output = grad_output + grad_z_loss.mean().expand_as(grad_output)
+            grad_output = grad_output + grad_z_loss.expand_as(grad_output)
 
         # Finally elementwise multiplication with the output gradients.
         grad_input.mul_(grad_output.unsqueeze(dim=-1))
