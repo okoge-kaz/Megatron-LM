@@ -96,10 +96,7 @@ class _VocabParallelCrossEntropy(torch.autograd.Function):
             loss = (1.0 - smoothing) * loss - smoothing * mean_log_probs
 
         # z-loss
-        use_z_loss: bool = False
         if args is not None and args.use_z_loss:
-            use_z_loss = True
-
             # torch.log(sum(exp(logits))) = torch.log(sum(exp(logits - max(logits) + max(logits))))
             # = torch.log[sum(exp(logits - max(logits))) * exp(max(logits))]
             # = torch.log(sum(exp(logits - max(logits)))) + max(logits)
@@ -108,14 +105,13 @@ class _VocabParallelCrossEntropy(torch.autograd.Function):
             z_loss = 1e-4 * log_Z * log_Z
             loss: torch.Tensor = loss + z_loss
 
-        ctx.use_z_loss = use_z_loss
+            # for backward
+            exp_logits *= (1.0 + 2 * 1e-4 * log_Z.unsqueeze(dim=-1))
+
         ctx.label_smoothing, ctx.vocab_size = label_smoothing, vocab_size
 
-        if use_z_loss:
-            ctx.save_for_backward(exp_logits, target_mask, masked_target_1d, sum_exp_logits, log_Z)  # type: ignore
-        else:
-            # Store softmax, target-mask and masked-target for backward pass.
-            ctx.save_for_backward(exp_logits, target_mask, masked_target_1d)
+        # Store softmax, target-mask and masked-target for backward pass.
+        ctx.save_for_backward(exp_logits, target_mask, masked_target_1d)
 
         return loss
 
@@ -124,11 +120,7 @@ class _VocabParallelCrossEntropy(torch.autograd.Function):
 
         # Retreive tensors from the forward path.
         label_smoothing, vocab_size = ctx.label_smoothing, ctx.vocab_size
-        use_z_loss = ctx.use_z_loss
-        if use_z_loss:
-            softmax, target_mask, masked_target_1d, sum_exp_logits, log_Z = ctx.saved_tensors
-        else:
-            softmax, target_mask, masked_target_1d = ctx.saved_tensors
+        softmax, target_mask, masked_target_1d = ctx.saved_tensors
 
         # All the inputs have softmax as thier gradient.
         grad_input = softmax
@@ -149,13 +141,11 @@ class _VocabParallelCrossEntropy(torch.autograd.Function):
         else:
             grad_2d[arange_1d, masked_target_1d] -= softmax_update
 
-        if use_z_loss:
-            grad_z_loss: torch.Tensor = 2 * 1e-4 * log_Z / sum_exp_logits  # type: ignore
-            grad_output = grad_output + grad_z_loss.expand_as(grad_output)
-
         # Finally elementwise multiplication with the output gradients.
         grad_input.mul_(grad_output.unsqueeze(dim=-1))
 
+        # return gradients (forward function has 4 arguments, so we need to return 4 gradients)
+        # (vocab_parallel_logits, target, label_smoothing, args)
         return grad_input, None, None, None
 
 
