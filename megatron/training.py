@@ -1260,7 +1260,7 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
         writer.flush()
     wandb_writer = get_wandb_writer()
     if wandb_writer:
-        wandb_writer.finish()
+        wandb.finish()
 
     # Close out pre-hooks if using distributed optimizer and overlapped param gather.
     if args.use_distributed_optimizer and args.overlap_param_gather:
@@ -1408,8 +1408,8 @@ def evaluate_and_print_results(prefix, forward_step_func,
                                   iteration)
                 writer.add_scalar('{} validation ppl vs samples'.format(key),
                                   ppl, args.consumed_train_samples)
-            if wandb_writer and is_last_rank():
-                wandb.log({'{} validation'.format(key): total_loss_dict[key].item()}, iteration)
+        if wandb_writer and is_last_rank():
+            wandb.log({'{} validation'.format(key): total_loss_dict[key].item()}, iteration)
 
     if process_non_loss_data_func is not None and writer and is_last_rank():
         process_non_loss_data_func(collected_non_loss_data, iteration, writer)
