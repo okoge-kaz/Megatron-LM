@@ -2,7 +2,7 @@
 #SBATCH --job-name=llama-2-175b
 #SBATCH --partition=a3
 #SBATCH --exclusive
-#SBATCH --nodes 72
+#SBATCH --nodes 64
 #SBATCH --gpus-per-node=8
 #SBATCH --ntasks-per-node=8
 #SBATCH --output=outputs/llama-2-175b/%x-%j.out
@@ -75,7 +75,7 @@ NUM_GPUS=$((${NUM_NODES} * ${NUM_GPU_PER_NODE}))
 
 # model config
 HIDDEN_SIZE=12288
-FFN_HIDDEN_SIZE=32768
+FFN_HIDDEN_SIZE=38464
 NUM_LAYERS=96
 NUM_HEADS=96
 NUM_QUERY_GROUPS=16
@@ -83,7 +83,7 @@ SEQ_LENGTH=4096
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=4
-PIPELINE_PARALLEL_SIZE=8
+PIPELINE_PARALLEL_SIZE=16
 CONTEXT_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
@@ -100,13 +100,13 @@ WEIGHT_DECAY=0.1
 GRAD_CLIP=1
 
 # model config
-TOKENIZER_MODEL=~/llm-jp-tokenizer/models/ver3.0/llm-jp-tokenizer-100k.ver3.0b1.model
-CHECKPOINT_SAVE_DIR=~/checkpoints/Llama-2-175b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-cp${CONTEXT_PARALLEL_SIZE}
+TOKENIZER_MODEL=/home/ext_kazuki_fujii_rio_gsic_titech/llm-jp-tokenizer/models/ver3.0/llm-jp-tokenizer-100k.ver3.0b1.model
+CHECKPOINT_SAVE_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/checkpoints/Llama-2-175b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-cp${CONTEXT_PARALLEL_SIZE}
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
 # data config
-DATASET_DIR=~/datasets/training_resharded_tokenize_ver3.0
+DATASET_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/datasets/training_resharded_tokenize_ver3.0
 
 TRAIN_DATA_PATH=""
 
@@ -156,7 +156,7 @@ TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1826105478 ${DATASET_DIR}/train/ja/kaken_000
 
 # ja warp html
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1329440698 ${DATASET_DIR}/train/ja/warp-html-01-06_0000.jsonl_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1397268214 ${DATASET_DIR}/train/ja/warp-html-01-06_0001.jsonl_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1397268214 ${DATASET_DIR}/train/ja/warp-html-07-12_0000.jsonl_text_document"
 
 # ja warp pdf
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 33073405454 ${DATASET_DIR}/train2/ja/warp-pdf-e00_0000.jsonl_text_document"
@@ -305,8 +305,8 @@ mpirun -np $NUM_GPUS \
   --tokenizer-model ${TOKENIZER_MODEL} \
   ${CHECKPOINT_ARGS} \
   --save ${CHECKPOINT_SAVE_DIR} \
-  --train-data-path ${TRAIN_DATA_PATH} \
-  --valid-data-path ${VALID_DATA_PATH} \
+  --data-path ${TRAIN_DATA_PATH} \
+  --split 949,50,1 \
   --distributed-backend nccl \
   --init-method-std 0.02 \
   --lr ${LR} \
@@ -343,6 +343,6 @@ mpirun -np $NUM_GPUS \
   --use-mpi \
   --use-z-loss \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "Llama-2-175B" \
+  --wandb-project "TFLOPS-175B" \
   --wandb-entity "nii-geniac" \
   --use-gcp-dynamic-checkpointing
