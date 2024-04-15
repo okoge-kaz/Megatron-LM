@@ -108,18 +108,18 @@ WEIGHT_DECAY=0.1
 GRAD_CLIP=1
 
 # model config
-TOKENIZER_MODEL=/home/ext_kazuki_fujii_turing_motors_c/hf-checkpoints/Llama-2-13b-hf/tokenizer.model
-CHECKPOINT_SAVE_DIR=/home/ext_kazuki_fujii_turing_motors_c/checkpoints/Llama-2-13b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-mcore
+TOKENIZER_MODEL=/home/ext_kazuki_fujii_rio_gsic_titech/llm-jp-tokenizer/models/ver3.0/llm-jp-tokenizer-100k.ver3.0b1.model
+CHECKPOINT_SAVE_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/checkpoints/Llama-2-13b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-mcore
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
 # data config
-DATASET_DIR=/home/ext_kazuki_fujii_turing_motors_c/datasets
+DATASET_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/datasets
 
 DATA_PATH=""
 
 # ja wikipedia
-DATA_PATH="${DATA_PATH} 2659052072 ${DATASET_DIR}/ja_wiki_merged_train_text_document"
+DATA_PATH="${DATA_PATH} 2659052072 /home/ext_kazuki_fujii_rio_gsic_titech/datasets/samples/wiki_0000.jsonl_text_document"
 
 # job name
 JOB_NAME="llama-2-13b-base-okazaki-lab-cc-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss-overlap-param-gather-grad-reduce"
@@ -194,5 +194,5 @@ mpirun -np $NUM_GPUS \
   --use-z-loss \
   --use-embedding-scaling \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "megatron-lm-3d" \
-  --wandb-entity "turing-geniac"
+  --wandb-project "TFLOPS-175B" \
+  --wandb-entity "nii-geniac"
