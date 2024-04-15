@@ -31,7 +31,7 @@ d_hidden = 12288
 
 # Now either let the 8/3 ratio give the starting dimension size or choose you own - the 8/3 is
 # only a suggestion to compensate for the 3rd additional matrix
-d_ff_base = int(8 / 3 * d_hidden)
+d_ff_base = int(3.09 * d_hidden)
 # d_ff_base = 11008
 
 # batch size - make it larger for small matrices
@@ -41,7 +41,7 @@ batch_size = 1
 num_iterations = 100
 
 # searching range: d_ff_base-distance < d_ff_base < d_ff_base+distance
-distance = 300
+distance = 500
 
 # Modify the Search Parameters End ###
 
