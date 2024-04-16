@@ -93,8 +93,8 @@ GLOBAL_BATCH_SIZE=1728
 TRAIN_STEPS=296699 # 2.1 T Tokens
 LR_DECAY_ITERS=268442  # 1.9 T Tokens
 
-LR=5e-5
-MIN_LR=5e-6
+LR=1e-4
+MIN_LR=1e-5
 LR_WARMUP_STEPS=2000
 WEIGHT_DECAY=0.1
 GRAD_CLIP=1
@@ -288,8 +288,7 @@ mpirun -np $NUM_GPUS \
   --context-parallel-size ${CONTEXT_PARALLEL_SIZE} \
   --sequence-parallel \
   --use-distributed-optimizer \
-  --overlap-param-gather \
-  --overlap-grad-reduce \
+  --distributed-timeout-minutes 30 \
   --num-layers ${NUM_LAYERS} \
   --hidden-size ${HIDDEN_SIZE} \
   --ffn-hidden-size ${FFN_HIDDEN_SIZE} \
@@ -306,7 +305,7 @@ mpirun -np $NUM_GPUS \
   ${CHECKPOINT_ARGS} \
   --save ${CHECKPOINT_SAVE_DIR} \
   --data-path ${TRAIN_DATA_PATH} \
-  --split 949,50,1 \
+  --split 998,1,1 \
   --distributed-backend nccl \
   --init-method-std 0.02 \
   --lr ${LR} \
@@ -322,7 +321,7 @@ mpirun -np $NUM_GPUS \
   --adam-eps 1e-5 \
   --log-interval 1 \
   --save-interval 500 \
-  --eval-interval 500 \
+  --eval-interval ${TRAIN_STEPS} \
   --eval-iters 10 \
   --bf16 \
   --untie-embeddings-and-output-weights \
@@ -343,6 +342,8 @@ mpirun -np $NUM_GPUS \
   --use-mpi \
   --use-z-loss \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "TFLOPS-175B" \
+  --wandb-project "Llama-2-175B" \
   --wandb-entity "nii-geniac" \
   --use-gcp-dynamic-checkpointing
+  # --log-timers-to-tensorboard \
+  # --timing-log-level 2
