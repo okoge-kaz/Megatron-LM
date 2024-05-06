@@ -1,6 +1,7 @@
 __pycache__
 .python-version
 .vscode/sftp.json
+helpers
 
 *.err
 *.out
