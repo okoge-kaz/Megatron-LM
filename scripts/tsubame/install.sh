@@ -11,7 +11,7 @@ module use ~/modulefiles
 
 module load ylab/cuda/12.1
 module load ylab/cudnn/8.9.7
-module load ylab/nccl/2.18.3
+module load ylab/nccl/cuda-12.1/2.18.3
 module load ylab/hpcx/2.17.1
 module load ninja/1.11.1
 
@@ -32,7 +32,11 @@ cd apex
 pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
 
 # transformer engine
-pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.4
+git clone --branch stable --recursive https://github.com/NVIDIA/TransformerEngine.git
+
+cd TransformerEngine
+export NVTE_FRAMEWORK=pytorch
+pip install .
 
 # flash-atten
 cd ..
