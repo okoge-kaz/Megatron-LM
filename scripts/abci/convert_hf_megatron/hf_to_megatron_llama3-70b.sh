@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=1
-#$ -l h_rt=0:01:00:00
+#$ -l h_rt=0:03:00:00
 #$ -j y
 #$ -o outputs/hf-to-megatron/
 #$ -cwd
