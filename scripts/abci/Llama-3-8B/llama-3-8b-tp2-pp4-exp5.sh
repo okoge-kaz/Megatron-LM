@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l rt_AF=16
+#$ -l rt_AF=4
 #$ -l h_rt=5:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3-8b/
@@ -50,7 +50,7 @@ SEQ_LENGTH=8192
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=2   # fixed
-PIPELINE_PARALLEL_SIZE=2 # num layers 32: Llama-2 8B
+PIPELINE_PARALLEL_SIZE=4 # num layers 32: Llama-2 8B
 CONTEXT_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
