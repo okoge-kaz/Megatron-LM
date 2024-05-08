@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -l rt_AF=16
-#$ -l h_rt=5:00:00:00
+#$ -l rt_AF=8
+#$ -l h_rt=8:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3-8b/
 #$ -cwd
@@ -96,7 +96,7 @@ TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4584050488 /groups/gag51395/datasets/binariz
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 8318990242 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/algebraic-stack_text_document"
 
 # job name
-JOB_NAME="Llama-3-8b-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
+JOB_NAME="Llama-3-8b-exp3-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
 
 # checkpoint load
 if [[ -f "${CHECKPOINT_SAVE_DIR}/latest_checkpointed_iteration.txt" ]]; then
