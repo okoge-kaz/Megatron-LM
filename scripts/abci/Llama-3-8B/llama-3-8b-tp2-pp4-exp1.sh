@@ -77,20 +77,20 @@ mkdir -p ${CHECKPOINT_SAVE_DIR}
 TRAIN_DATA_PATH=""
 
 # ja swallow
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 10576013418 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/split_0_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 10472004762 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/split_1_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 12490506449 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/split_2_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 16470329386 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/split_3_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 38299934406 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/split_4_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 10576013418 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/split_0_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 10472004762 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/split_1_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 12490506449 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/split_2_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 16470329386 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/split_3_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 38299934406 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/split_4_text_document"
 
 # ja wiki
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1691211578 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/ja_wiki_merged_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1691211578 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/ja_wiki_merged_text_document"
 
 # en arxiv
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5000000000 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/lumi_en_arxiv_merge_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5000000000 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/lumi_en_arxiv_merge_text_document"
 
 # en refinedweb
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5000000000 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/lumi_en_falcon_merge_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5000000000 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/lumi_en_falcon_merge_text_document"
 
 # job name
 JOB_NAME="Llama-3-8b-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"

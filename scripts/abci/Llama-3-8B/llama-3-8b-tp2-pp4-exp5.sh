@@ -77,26 +77,26 @@ mkdir -p ${CHECKPOINT_SAVE_DIR}
 TRAIN_DATA_PATH=""
 
 # ja swallow
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 10117561571 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/split_0_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 10018061509 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/split_1_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 11949064647 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/split_2_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 15756369159 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/split_3_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 36639698644 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/split_4_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 10117561571 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/split_0_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 10018061509 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/split_1_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 11949064647 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/split_2_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 15756369159 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/split_3_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 36639698644 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/split_4_text_document"
 
 # ja wiki
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1691211578 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/ja_wiki_merged_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1691211578 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/ja_wiki_merged_text_document"
 
 # en arxiv
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4787331506 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/lumi_en_arxiv_merge_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4787331506 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/lumi_en_arxiv_merge_text_document"
 
 # en refinedweb
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4787331506 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/lumi_en_falcon_merge_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4787331506 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/lumi_en_falcon_merge_text_document"
 
 # code qitta
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 2346949253 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/sourcecodes_reform_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 2346949253 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/sourcecodes_reform_text_document"
 
 # code starcoder ja
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1906420627 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/starcoderdata_ja_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1906420627 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/starcoderdata_ja_text_document"
 
 # job name
 JOB_NAME="Llama-3-8b-exp5-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
@@ -157,7 +157,7 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --log-interval 1 \
-  --save-interval 500 \
+  --save-interval 250 \
   --eval-interval 500 \
   --eval-iters 10 \
   --bf16 \
