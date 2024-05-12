@@ -25,7 +25,7 @@ PIPELINE_PARALLEL_SIZE=8
 
 # model config
 HF_CHECKPOINT_DIR=/groups/gag51395/hf-checkpoints/Meta-Llama-3-70B
-MEGATRON_CHECKPOINT_DIR=/groups/gag51395/checkpoints/Llama-3-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+MEGATRON_CHECKPOINT_DIR=/groups/gag51395/checkpoints/hf-to-megatron/Llama-3-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
 
 mkdir -p ${MEGATRON_CHECKPOINT_DIR}
 
