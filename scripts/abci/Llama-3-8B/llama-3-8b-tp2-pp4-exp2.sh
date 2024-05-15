@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l rt_AF=8
+#$ -l rt_AF=16
 #$ -l h_rt=8:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3-8b/

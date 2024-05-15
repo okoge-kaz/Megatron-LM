@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -l rt_AF=4
-#$ -l h_rt=15:00:00:00
+#$ -l rt_AF=16
+#$ -l h_rt=16:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3-8b/
 #$ -cwd
@@ -176,7 +176,7 @@ mpirun -np $NUM_GPUS \
   --swiglu \
   --use-flash-attn \
   --recompute-activations \
-  --recompute-granularity "selective" \
+  --recompute-granularity "full" \
   --attention-softmax-in-fp32 \
   --transformer-impl "transformer_engine" \
   --use-mpi \
