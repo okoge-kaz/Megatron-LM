@@ -1,6 +1,7 @@
 #!/bin/bash
 #$ -l rt_AF=16
 #$ -l h_rt=5:00:00:00
+#$ -l USE_SSH=1
 #$ -j y
 #$ -o outputs/Llama-3-8b/
 #$ -cwd
@@ -114,6 +115,8 @@ else
   # first training
   CHECKPOINT_ARGS="--load ${CHECKPOINT_DIR} --no-load-rng --no-load-optim"
 fi
+
+export WANDB_HTTP_TIMEOUT=300
 
 # run
 mpirun -np $NUM_GPUS \
