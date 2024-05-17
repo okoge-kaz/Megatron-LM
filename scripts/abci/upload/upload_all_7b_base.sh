@@ -2,18 +2,16 @@
 
 set -e
 
-start=20000
-end=25000
-increment=5000
+start=10000
+end=12500
+increment=2500
 
-tokenizer_path=/bb/llm/gaf51275/llama/huggingface-checkpoint/Llama-2-7b-hf/tokenizer.model
-
-upload_base_dir=/bb/llm/gaf51275/llama/from_megatron_hf_checkpoints/hf_checkpoints/Llama2-7b-base-default/okazaki_lab_cc
+upload_base_dir=/groups/gag51395/checkpoints/megatron-to-hf/Llama-3-8b-hf/ja_en_code-exp3/tp2-pp4-ct1/LR2.5e-5-MINLR2.5E-6-WD0.1
 
 for ((i = start; i <= end; i += increment)); do
   upload_dir=$upload_base_dir/iter_$(printf "%07d" $i)
 
   python scripts/abci/upload/upload.py \
     --ckpt-path $upload_dir \
-    --repo-name tokyotech-llm/Llama2-7b-base-megatron-iter$(printf "%07d" $i)
+    --repo-name tokyotech-llm/Llama-3-8b-exp3-LR2.5e-5-MINLR2.5E-6-WD0.1-iter$(printf "%07d" $i)
 done
