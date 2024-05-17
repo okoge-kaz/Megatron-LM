@@ -10,12 +10,12 @@ set -e
 
 source .env/bin/activate
 
-start=12500
+start=2500
 end=12500
 increment=2500
 
 base_dirs=(
-  "/gs/bs/tgh-NII-LLM/checkpoints/megatron-to-hf/Llama-3-8b-hf/exp2/LR1.0E-5-MINLR1.0E-6-WD0.1-WARMUP1000"
+  "/gs/bs/tgh-NII-LLM/checkpoints/megatron-to-hf/Llama-3-8b-hf/exp2/LR1.0E-5-MINLR1.0E-6-WD0.1"
 )
 
 for base_dir in "${base_dirs[@]}"; do
