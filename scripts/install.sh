@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l rt_AG.small=1
+#$ -l rt_AF=1
 #$ -l h_rt=1:00:00
 #$ -j y
 #$ -o outputs/install/
@@ -19,9 +19,9 @@ source .env/bin/activate
 
 # pip install
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install --upgrade setuptools wheel cmake ninja packaging
 
-pip install ninja wheel packaging
+pip install -r requirements.txt
 
 # apex install
 git clone git@github.com:NVIDIA/apex.git
@@ -30,9 +30,13 @@ cd apex
 pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
 
 # transformer engine
+# A100 1枚だと CPU memory 不足でエラーになる
 git clone --branch stable --recursive https://github.com/NVIDIA/TransformerEngine.git
 
 cd TransformerEngine
+git checkout v1.6
+
+git submodule update --init --recursive
 export NVTE_FRAMEWORK=pytorch
 pip install .
 
@@ -40,7 +44,7 @@ pip install .
 git clone git@github.com:Dao-AILab/flash-attention.git
 cd flash-attention
 git checkout v2.4.2
-MAX_JOBS=8 python setup.py install
+python setup.py install
 
 # huggingface install
 pip install transformers accelerate zarr tensorstore
