@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=16
-#$ -l h_rt=77:50:00
+#$ -l h_rt=75:40:00
 #$ -o outputs/Llama-3-70b/$JOB_ID
 #$ -e outputs/Llama-3-70b/$JOB_ID
 #$ -p -5
@@ -122,6 +122,8 @@ mpirun -np $NUM_GPUS \
   -x MASTER_PORT=$MASTER_PORT \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
   -x LD_LIBRARY_PATH \
+  -x WANDB_INIT_TIMEOUT=300 \
+  -x WANDB__SERVICE_WAIT=300 \
   -x PATH \
   -bind-to none \
   -x PATH \
@@ -188,4 +190,5 @@ mpirun -np $NUM_GPUS \
   --log-throughput \
   --wandb-name ${JOB_NAME} \
   --wandb-project "Llama-3-70B" \
-  --wandb-entity "prj-jalm"
+  --wandb-entity "prj-jalm" \
+  --wandb-offline

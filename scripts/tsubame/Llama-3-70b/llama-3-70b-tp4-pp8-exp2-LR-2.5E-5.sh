@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=16
-#$ -l h_rt=480:00:00
+#$ -l h_rt=24:00:00
 #$ -o outputs/Llama-3-70b/$JOB_ID
 #$ -e outputs/Llama-3-70b/$JOB_ID
 #$ -p -5
@@ -68,7 +68,7 @@ GRAD_CLIP=1
 # model config
 TOKENIZER_MODEL=/gs/bs/tga-bayes-crest/fujii/hf-checkpoints/Meta-Llama-3-70B/tokenizer.json
 CHECKPOINT_DIR=/gs/bs/tgh-NII-LLM/checkpoints/hf-to-megatron/Llama-3-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/gs/bs/tgh-NII-LLM/checkpoints/Llama-3-70B/swallow-exp2/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
+CHECKPOINT_SAVE_DIR=/gs/bs/tgh-NII-LLM/checkpoints/Llama-3-70B/swallow-exp2/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}-BF16
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
@@ -168,7 +168,7 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --log-interval 1 \
-  --save-interval 250 \
+  --save-interval 100 \
   --eval-interval 500 \
   --eval-iters 10 \
   --bf16 \
@@ -190,7 +190,6 @@ mpirun -np $NUM_GPUS \
   --recompute-granularity "selective" \
   --attention-softmax-in-fp32 \
   --transformer-impl "transformer_engine" \
-  --fp8-format 'hybrid' \
   --use-mpi \
   --use-z-loss \
   --log-throughput \
