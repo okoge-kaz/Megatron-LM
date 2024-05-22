@@ -170,7 +170,7 @@ mpirun -np $NUM_GPUS \
   --adam-beta2 0.95 \
   --log-interval 1 \
   --save-interval 100 \
-  --eval-interval 500 \
+  --eval-interval 12500 \
   --eval-iters 10 \
   --bf16 \
   --use-checkpoint-args \
