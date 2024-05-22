@@ -1,13 +1,13 @@
 #!/bin/bash
 #$ -l rt_AF=4
-#$ -l h_rt=16:00:00:00
+#$ -l h_rt=4:00:00
 #$ -j y
 #$ -o outputs/Llama-3-8b/
 #$ -cwd
 
 # Load modules
 source /etc/profile.d/modules.sh
-module use /groups/gag51395/modules/modulefiles
+module use /bb/llm/gaf51275/modules/modulefiles
 
 module load cuda/12.1/12.1.1
 module load cudnn/cuda-12.1/9.0.0
@@ -118,6 +118,7 @@ mpirun -np $NUM_GPUS \
   -x MASTER_PORT=$MASTER_PORT \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
   -x LD_LIBRARY_PATH \
+  -x NCCL_DEBUG=INFO \
   -x PATH \
   -bind-to none \
   -x PATH \
