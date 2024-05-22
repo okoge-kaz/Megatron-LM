@@ -20,21 +20,21 @@ source .env/bin/activate
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=2
-PIPELINE_PARALLEL_SIZE=2
+PIPELINE_PARALLEL_SIZE=4
 
-ITERATION=10000
+ITERATION=12500
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/groups/gag51395/checkpoints/Llama-3-8b/ja8-en1-code1-exp2/tp2-pp4-ct1/LR2.5e-5-MINLR2.5E-6-WD0.1
-HF_CHECKPOINT_DIR=/groups/gag51395/checkpoints/megatron-to-hf/Llama-3-8b-hf/ja8-en1-code1-exp2/tp2-pp4-ct1/LR2.5e-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
+MEGATRON_CHECKPOINT_DIR=/groups/gag51395/checkpoints/Llama-3-8b/ja8-en1-code1-exp5/tp2-pp4-ct1/LR2.5e-5-MINLR2.5E-6-WD0.1
+HF_CHECKPOINT_DIR=/groups/gag51395/checkpoints/megatron-to-hf/Llama-3-8b-hf/ja8-en1-code1-exp5/tp2-pp4-ct1/LR2.5e-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
 mkdir -p ${HF_CHECKPOINT_DIR}
 
 echo $ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
 
 # tokenizer config
-TOKENIZER_MODEL_DIR=/groups/gag51395/hf-checkpoints/Meta-Llama-3-8B
+TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3-70B
 
 # convert
 python tools/checkpoint/convert.py \
@@ -46,4 +46,4 @@ python tools/checkpoint/convert.py \
   --hf-tokenizer-path ${TOKENIZER_MODEL_DIR} \
   --save-dtype bfloat16 \
   --loader-transformer-impl transformer_engine \
-  --megatron-path /groups/gag51395/src/Megatron-LM
+  --megatron-path /bb/llm/gaf51275/2024/Megatron-LM
