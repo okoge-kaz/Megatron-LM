@@ -63,7 +63,7 @@ LR_DECAY_ITERS=25000
 
 LR=2.5E-5
 MIN_LR=2.5E-6
-LR_WARMUP_STEPS=13500
+LR_WARMUP_STEPS=1000
 WEIGHT_DECAY=0.1
 GRAD_CLIP=1
 
@@ -116,6 +116,7 @@ JOB_NAME="Llama-3-8b-rewarmup-exp6-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-
 
 # checkpoint load
 CHECKPOINT_ARGS="--load ${CHECKPOINT_SAVE_DIR}"
+# CHECKPOINT_ARGS="--load ${CHECKPOINT_SAVE_DIR} --no-load-optim --no-load-rng"
 
 # run
 mpirun -np $NUM_GPUS \
