@@ -69,15 +69,3 @@ cp $TOKENIZER_MODEL_DIR/llm-jp-tokenizer-100k.ver3.0b1.model $HF_CHECKPOINT_DIR/
 echo $LATEST_ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
 
 echo "uploading iteration $ITERATION"
-
-# upload to HF
-bash scripts/gcp/upload/upload_172b.sh $ITERATION $ITERATION
-
-echo "uploaded iteration $ITERATION"
-
-echo "removing checkpoint $ITERATION"
-
-# rm checkpoint
-rm -rf ${HF_CHECKPOINT_DIR}
-
-echo "removed checkpoint $ITERATION"
