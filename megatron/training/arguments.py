@@ -1517,6 +1517,7 @@ def _add_data_args(parser):
                                 'SentencePieceTokenizer',
                                 'GPTSentencePieceTokenizer',
                                 'Llama2Tokenizer',
+                                'Llama3Tokenizer_HF',
                                 'Llama3Tokenizer',
                                 'MistralTokenizer',
                                 'NullTokenizer'],
