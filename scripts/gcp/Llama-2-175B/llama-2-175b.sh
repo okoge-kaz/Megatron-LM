@@ -106,7 +106,7 @@ CHECKPOINT_SAVE_DIR=/lustre/checkpoints/Llama-2-175b/tp${TENSOR_PARALLEL_SIZE}-p
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
 # data config
-DATASET_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/datasets/training_resharded_tokenize_ver3.0
+DATASET_DIR=/lustre/datasets/training_resharded_tokenize_ver3.0
 
 TRAIN_DATA_PATH=""
 
@@ -320,7 +320,7 @@ mpirun -np $NUM_GPUS \
   --adam-beta2 0.95 \
   --adam-eps 1e-5 \
   --log-interval 1 \
-  --save-interval 250 \
+  --save-interval 500 \
   --eval-interval ${TRAIN_STEPS} \
   --eval-iters 10 \
   --bf16 \
@@ -345,7 +345,6 @@ mpirun -np $NUM_GPUS \
   --wandb-name ${JOB_NAME} \
   --wandb-project "Llama-2-175B" \
   --wandb-entity "nii-geniac" \
-  --use-gcp-dynamic-checkpointing \
   --fp8-format hybrid
   # --log-timers-to-tensorboard \
   # --timing-log-level 2
