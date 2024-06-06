@@ -43,13 +43,10 @@ def build_tokenizer(args):
     elif args.tokenizer_type == 'Llama2Tokenizer':
         assert args.tokenizer_model is not None
         tokenizer = _Llama2Tokenizer(args.tokenizer_model)
-    elif args.tokenizer_type == 'Llama3Tokenizer':
-        assert args.tokenizer_model is not None
-        tokenizer = create_llama3_tokenizer(args.tokenizer_model)
     elif args.tokenizer_type == 'MistralTokenizer':
         assert args.tokenizer_model is not None
         tokenizer = create_mistral_tokenizer(args.tokenizer_model)
-    elif args.tokenizer_type == 'Llama3Tokenizer_HF':
+    elif args.tokenizer_type == 'Llama3Tokenizer':
         assert args.tokenizer_model is not None
         tokenizer = _Llama3Tokenizer(args.tokenizer_model)
     elif args.tokenizer_type == 'NullTokenizer':

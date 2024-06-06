@@ -1317,7 +1317,8 @@ def _add_checkpointing_args(parser):
     group.add_argument('--ckpt-assume-constant-structure', action='store_true',
                        help='If the model and optimizer state dict structure is'
                             'constant throughout a *single training job*, it allows for'
-                            'different checkpointing performance optimizations.')    group.add_argument('--use-gcp-dynamic-checkpointing', action='store_true')
+                            'different checkpointing performance optimizations.')
+    group.add_argument('--use-gcp-dynamic-checkpointing', action='store_true')
     group.add_argument('--dynamic-checkpointing-min', type=int, default=0)
 
     return parser

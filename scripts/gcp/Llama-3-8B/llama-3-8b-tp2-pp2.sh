@@ -14,6 +14,7 @@ set -e
 module load cuda/12.1
 module load cudnn/8.9.7
 module load hpcx/2.17.1
+module load nccl/2.20.5
 
 # open file limit
 ulimit -n 65536 1048576
@@ -195,11 +196,10 @@ mpirun -np $NUM_GPUS \
   --recompute-granularity "selective" \
   --attention-softmax-in-fp32 \
   --transformer-impl "transformer_engine" \
-  --fp8-format 'hybrid' \
   --use-mpi \
   --use-z-loss \
   --log-throughput \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "Llama-3-8B" \
-  --wandb-entity "prj-jalm" \
+  --wandb-project "Megatron-LM" \
+  --wandb-entity "okoge" \
   --use-gcp-dynamic-checkpointing
