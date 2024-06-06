@@ -4,7 +4,12 @@ import json
 import os
 import sys
 import torch
-import transformers
+try:
+    import transformers
+except ImportError:
+    raise ImportError("The 'transformers' package is not installed.")
+import gc
+import shutil
 from tqdm import tqdm
 import types
 
@@ -12,8 +17,6 @@ import types
 def add_arguments(parser):
     group = parser.add_argument_group(title='Llama/Mistral loader.')
 
-<<<<<<< HEAD:tools/checkpoint/loader_llama2_hf.py
-=======
     # TODO(jbarker): Need assertion to make sure *exactly* one of these is used
     parser.add_argument('--model-size', type=str, required=True,
                         choices=['llama2-7B', 'llama2-13B', 'llama2-70B', 'llama2-7Bf', 'llama2-13Bf', 'llama2-70Bf', 'llama3-8B', 'llama3-70B', 'llama3-8Bf', 'llama3-70Bf', 'mistral-7B', 'mistral-7Bf'],
@@ -23,7 +26,6 @@ def add_arguments(parser):
                         help='Type of checkpoint to convert, options are "meta" or "hf"')
     parser.add_argument('--bf16', action='store_true', help='Whether to load weights in bf16.')
     parser.add_argument('--fp16', action='store_true', help='Whether to load weights in fp16.')
->>>>>>> main:tools/checkpoint/loader_llama_mistral.py
     group.add_argument('--true-vocab-size', type=int, default=None,
                        help='original size of vocab, if specified will trim padding from embedding table.')
     group.add_argument('--vocab-file', type=str, default=None,
@@ -32,12 +34,7 @@ def add_arguments(parser):
     group.add_argument('--tokenizer-model', required=True,
                        help='Tokenizer model file.')
     group.add_argument('--megatron-path', type=str, default=None,
-<<<<<<< HEAD:tools/checkpoint/loader_llama2_hf.py
-                       help='Base directory of deepspeed repository')
-    parser.add_argument('--bf16', action='store_true', help='Whether to load weights in bf16.')
-=======
                        help='Base directory of Megatron repository')
->>>>>>> main:tools/checkpoint/loader_llama_mistral.py
     group.add_argument('--loader-transformer-impl', default='local',
                        choices=['local', 'transformer_engine'],
                        help='Which Transformer implementation to use.')
@@ -48,15 +45,6 @@ def verify_transformers_version():
     assert major >= 4 and minor >= 31
 
 
-<<<<<<< HEAD:tools/checkpoint/loader_llama2_hf.py
-def load_args_from_checkpoint(args):
-
-    # Read Llama args.
-    llama_args_path = os.path.join(args.load, "config.json")
-    with open(llama_args_path) as f:
-        llama_args = json.load(f)
-
-=======
 NUM_SHARDS = {
     "llama2-7B": 1,
     "llama2-7Bf": 1,
@@ -317,7 +305,6 @@ def load_args_from_checkpoint(args):
     model_args_path = os.path.join(args.load, "config.json")
     with open(model_args_path) as f:
         model_args = json.load(f)
->>>>>>> main:tools/checkpoint/loader_llama_mistral.py
     # Update Megatron args.
     args.seq_length = 4096
     args.max_position_embeddings = model_args["max_position_embeddings"]
@@ -325,13 +312,8 @@ def load_args_from_checkpoint(args):
     args.num_attention_heads = model_args["num_attention_heads"]
     args.num_layers = model_args["num_hidden_layers"]
     args.global_batch_size = 1024
-<<<<<<< HEAD:tools/checkpoint/loader_llama2_hf.py
-    args.norm_epsilon = llama_args["rms_norm_eps"]
-    args.iteration = 1  # '0', 'release' don't work
-=======
     args.norm_epsilon = model_args["rms_norm_eps"]
     args.iteration = 1 # '0', 'release' don't work
->>>>>>> main:tools/checkpoint/loader_llama_mistral.py
     args.add_position_embedding = False
     args.use_rotary_position_embeddings = True
     args.swiglu = True
@@ -345,11 +327,6 @@ def load_args_from_checkpoint(args):
     if "num_key_value_heads" in model_args:
         args.group_query_attention = True
         args.num_query_groups = model_args["num_key_value_heads"]
-
-    if "rope_theta" in llama_args:
-        args.rope_theta = llama_args["rope_theta"]
-    else:
-        args.rope_theta = 10000
 
 
 def set_preprocess_state(args, model, hf_model):
@@ -374,17 +351,14 @@ def set_attn_state(args, layer, hf_layer):
     # Reshape loaded weights.
     tp = args.tensor_model_parallel_size
     nh = args.num_attention_heads // tp
-    ng = (args.num_query_groups if args.group_query_attention else args.num_attention_heads) // tp
+    ng = (args.num_query_groups if args.group_query_attention \
+        else args.num_attention_heads) // tp
     dim = args.kv_channels
     assert nh % ng == 0
 
     # Copy weights (re-order dimensions for Megatron).
     attn.query_key_value.weight.data.copy_(torch.cat([
-<<<<<<< HEAD:tools/checkpoint/loader_llama2_hf.py
-        hf_attn.q_proj.weight.reshape((ng, dim * nh // ng, -1)),
-=======
         hf_attn.q_proj.weight.reshape((ng, dim*nh//ng, -1)),
->>>>>>> main:tools/checkpoint/loader_llama_mistral.py
         hf_attn.k_proj.weight.reshape((ng, dim, -1)),
         hf_attn.v_proj.weight.reshape((ng, dim, -1)),
     ], dim=1).reshape((-1, args.hidden_size)))
@@ -428,16 +402,7 @@ def load_checkpoint_to_model(args):
         raise AttributeError(f"args.model_size={args.model_size} not supported")
 
     # Load Huggingface model.
-<<<<<<< HEAD:tools/checkpoint/loader_llama2_hf.py
-    hf_model = LlamaForCausalLM.from_pretrained(
-        args.load,
-        torch_dtype=args.params_dtype,
-        low_cpu_mem_usage=True,
-        device_map="cpu"
-    )
-=======
     hf_model = ModelForCausalLM.from_pretrained(args.load, torch_dtype=args.params_dtype, low_cpu_mem_usage=True, device_map="cpu")
->>>>>>> main:tools/checkpoint/loader_llama_mistral.py
 
     # Init Megatron model.
     model = model_provider(True, True).to(args.params_dtype)
@@ -462,6 +427,11 @@ def _load_checkpoint(queue, args):
                      os.path.pardir)))
     if args.megatron_path is not None:
         sys.path.insert(0, args.megatron_path)
+
+    # Convert Meta checkpoint to HF format as an intermediate step
+    if args.checkpoint_type == "meta":
+        model_tmp_path = convert_to_hf(model_path=os.path.join(args.save_dir, 'tmp'), input_base_path=args.load_dir, model_size=args.model_size, tokenizer_path=args.tokenizer_model)
+        args.load_dir = model_tmp_path
 
     try:
         from megatron.training.arguments import parse_args, validate_args
@@ -510,8 +480,6 @@ def _load_checkpoint(queue, args):
 
     margs.use_mcore_models = False
     margs.transformer_impl = args.loader_transformer_impl
-    if args.loader_transformer_impl == 'transformer_engine':
-        margs.attention_softmax_in_fp32 = True
 
     def check_for_arg(arg_name, default=None):
         if getattr(margs, arg_name, None) is None:
@@ -540,7 +508,7 @@ def _load_checkpoint(queue, args):
     # Determine how to make our models.
     assert args.model_type == 'GPT', 'Llama-2, Llama-3 and Mistral are GPT models.'
     margs.model_type = ModelType.encoder_or_decoder
-    margs.params_dtype = torch.bfloat16 if args.bf16 else torch.float16
+    margs.params_dtype = torch.bfloat16 if args.bf16 else torch.float16 if args.fp16 else torch.float32
 
     # Suppress warning about torch.distributed not being initialized.
     module.MegatronModule.embedding_warning_printed = True
@@ -577,15 +545,10 @@ def _load_checkpoint(queue, args):
     md.swiglu = margs.swiglu
     md.previous_tensor_parallel_size = margs.tensor_model_parallel_size
     md.previous_pipeline_parallel_size = margs.pipeline_model_parallel_size
-<<<<<<< HEAD:tools/checkpoint/loader_llama2_hf.py
-    md.true_vocab_size = None  # skips padding in saver
-=======
->>>>>>> main:tools/checkpoint/loader_llama_mistral.py
     md.make_vocab_size_divisible_by = None
     md.checkpoint_args = margs
     md.consumed_train_samples = 0
     md.consumed_valid_samples = 0
-    md.rope_theta = margs.rope_theta
 
     margs.model_size = args.model_size
 
@@ -690,10 +653,13 @@ def _load_checkpoint(queue, args):
 
     queue.put("done")
 
+    if args.checkpoint_type == "meta":
+        shutil.rmtree(os.path.join(args.save_dir, 'tmp'))
+
 
 def load_checkpoint(queue, args):
     try:
         _load_checkpoint(queue, args)
-    except Exception as e:
+    except:
         queue.put("exit")
-        raise e
+        raise
