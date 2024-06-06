@@ -45,6 +45,12 @@ def build_tokenizer(args):
         tokenizer = _Llama2Tokenizer(args.tokenizer_model)
     elif args.tokenizer_type == 'Llama3Tokenizer':
         assert args.tokenizer_model is not None
+        tokenizer = create_llama3_tokenizer(args.tokenizer_model)
+    elif args.tokenizer_type == 'MistralTokenizer':
+        assert args.tokenizer_model is not None
+        tokenizer = create_mistral_tokenizer(args.tokenizer_model)
+    elif args.tokenizer_type == 'Llama3Tokenizer_HF':
+        assert args.tokenizer_model is not None
         tokenizer = _Llama3Tokenizer(args.tokenizer_model)
     elif args.tokenizer_type == 'NullTokenizer':
         assert args.vocab_size is not None
@@ -557,18 +563,36 @@ class _Llama3Tokenizer(MegatronTokenizer):
         return len(self.tokenizer)
 
 
-class _NullTokenizer:
-    def __init__(self, vocab_size):
-        vocab_size = int(vocab_size)
-        self._eos_id = vocab_size
-        self.vocab_size = vocab_size + 1
+class _Llama3Tokenizer(MegatronTokenizer):
+    def __init__(self, model_file: str, vocab_extra_ids=0) -> None:
+        self.name = "Llama3Tokenizer"
+        super().__init__(model_file, vocab_extra_ids=vocab_extra_ids)
 
-    def tokenize(self, text):
-        return [int(x) for x in text.split(' ')]
+        from transformers import AutoTokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            pretrained_model_name_or_path=os.path.dirname(model_file)
+        )
+        self.bos_id: Optional[int] = self.tokenizer.bos_token_id
+        self.eos_id: Optional[int] = self.tokenizer.eos_token_id
+        self.pad_id: Optional[int] = self.tokenizer.pad_token_id
 
-    def detokenize(self, ids):
-        text = [str(x) for x in ids]
-        return ' '.join(text)
+        assert self.tokenizer.pad_token_id is None
+        assert self.tokenizer.bos_token_id is not None and self.tokenizer.bos_token_id == 128000
+        assert self.tokenizer.eos_token_id is not None and self.tokenizer.eos_token_id == 128001
+        assert len(self.tokenizer) >= 128256, f"vocab_size: {len(self.tokenizer)}"
+
+    def tokenize(self, text: str, bos=True, eos=False):
+        '''Default args for text completion, not chat/dialog.'''
+        assert type(text) is str
+        t = self.tokenizer.encode(text, add_special_tokens=False)  # type: ignore
+        if bos and self.bos_id is not None:
+            t = [self.bos_id] + t
+        if eos and self.eos_id is not None:
+            t = t + [self.eos_id]
+        return t
+
+    def detokenize(self, ids: list[int]):
+        return self.tokenizer.decode(ids, skip_special_tokens=True)
 
     @property
     def cls(self):
@@ -584,7 +608,127 @@ class _NullTokenizer:
 
     @property
     def eod(self):
-        return self._eos_id
+        return self.tokenizer.eos_token_id
+
+    @property
+    def additional_special_tokens_ids(self):
+        return None
+
+    @property
+    def vocab(self):
+        return self.tokenizer.get_vocab()
+
+    @property
+    def inv_vocab(self):
+        return {v: k for k, v in self.tokenizer.get_vocab().items()}
+
+    @property
+    def vocab_size(self):
+        return len(self.tokenizer)
+
+
+def create_llama3_tokenizer(*args, **kwargs):
+
+    try:
+        from llama.tokenizer import Tokenizer as Llama3Tokenizer
+    except ImportError:
+        raise ImportError("Module 'llama' is required but not installed.")
+
+    class _Llama3Tokenizer(Llama3Tokenizer):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        def tokenize(self, s: str, bos=True, eos=False):
+            '''Default args for text completion, not chat/dialog.'''
+
+            assert type(s) is str
+
+            t = self.encode(s, bos=False, eos=eos, allowed_special='all')
+            return t
+
+        def detokenize(self, ids):
+            return self.decode(ids)
+
+        @property
+        def cls(self):
+            return -1
+
+        @property
+        def sep(self):
+            return -1
+
+        @property
+        def mask(self):
+            return -1
+
+        @property
+        def eod(self):
+            return self.eos_id
+
+        @property
+        def additional_special_tokens_ids(self):
+            return None
+
+        @property
+        def vocab_size(self):
+            return self.model.n_vocab
+
+    return _Llama3Tokenizer(*args, **kwargs)
+
+
+def create_mistral_tokenizer(*args, **kwargs):
+    try:
+        from mistral_common.tokens.tokenizers.mistral import MistralTokenizer
+    except ImportError:
+        raise ImportError("Module 'mistral-common' is required but not installed.")
+
+    class _MistralTokenizer(MistralTokenizer):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+    return _MistralTokenizer.from_file(*args, **kwargs)
+
+
+class _NullTokenizer(MegatronTokenizer):
+    def __init__(self, vocab_size):
+        vocab_size = int(vocab_size)
+        self._eos_id = vocab_size
+        self.vocab_size = vocab_size+1
+
+    def tokenize(self, text):
+        return [int(x) for x in text.split(' ')]
+
+    def detokenize(self, ids):
+        text = [str(x) for x in ids]
+        return ' '.join(text)
+
+    @property
+    def vocab_size(self):
+        return self._vocab_size_without_eod + 1
+
+    @property
+    def vocab(self):
+        raise NotImplementedError
+
+    @property
+    def inv_vocab(self):
+        raise NotImplementedError
+
+    @property
+    def cls(self):
+        return -1
+
+    @property
+    def sep(self):
+        return -1
+
+    @property
+    def mask(self):
+        return -1
+
+    @property
+    def eod(self):
+        return self._eod_id
 
     @property
     def additional_special_tokens_ids(self):

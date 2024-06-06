@@ -13,7 +13,8 @@ import torch
 
 from megatron.core.datasets.blended_megatron_dataset_config import BlendedMegatronDatasetConfig
 from megatron.core.datasets.megatron_dataset import MegatronDataset
-from megatron.core.datasets.utils import log_single_rank, normalize
+from megatron.core.datasets.utils import normalize
+from megatron.core.utils import log_single_rank
 
 logger = logging.getLogger(__name__)
 
@@ -166,7 +167,7 @@ class BlendedDataset(torch.utils.data.Dataset):
                 log_single_rank(
                     logger,
                     logging.WARNING,
-                    "Unable to save the blending indexes because path_to_cache is None",
+                    f"Unable to save the {type(self).__name__} indexes because path_to_cache is None",
                 )
 
             t_end = time.time()
