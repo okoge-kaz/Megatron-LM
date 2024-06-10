@@ -3,8 +3,6 @@
 import os
 import sys
 import torch
-from importlib.metadata import version
-from pkg_resources import packaging
 
 from setter import ModelSetter
 from utils import get_mcore_transformer_block_key, print_memory_usage
@@ -16,7 +14,7 @@ class MCoreSetter(ModelSetter):
 
     @classmethod
     def get_transformer_block(cls, model):
-        return getattr(model, cls.transformer_block_key)
+        return getattr(model, cls.transformer_block_key)  # type: ignore
 
     @classmethod
     def has_position_embeddings(cls, model):
@@ -232,11 +230,6 @@ def add_arguments(parser):
 
 def save_checkpoint(queue, args):
 
-    # Transformer engine >= 0.12.0, for CPU initialization.
-    te_version = packaging.version.Version(version("transformer-engine"))
-    assert te_version >= packaging.version.Version("0.12.0"), \
-        "transformer engine version: %s (>=0.12.0 required)." % te_version
-
     # Search in directory above this
     sys.path.append(os.path.abspath(
         os.path.join(os.path.dirname(__file__),
@@ -278,9 +271,8 @@ def save_checkpoint(queue, args):
             print(f"Unexpected values in {msg_name}:")
             for key in msg.keys():
                 print(f"   {key}")
-            print(f"Exiting. If you want to ignore this, use the argument --no-checking.")
+            print("Exiting. If you want to ignore this, use the argument --no-checking.")
             exit(1)
-
 
     md = queue_get()
 
@@ -349,7 +341,7 @@ def save_checkpoint(queue, args):
 
     margs = parse_args()
 
-    if hasattr (md, 'checkpoint_args'):
+    if hasattr(md, 'checkpoint_args'):
         # These are arguments that we are either changing, or cause problems for validation if they are set
         # Note that some of these deal with T5 so will need to be changed if we support T5.
         args_to_keep = ['tensor_model_parallel_size', 'pipeline_model_parallel_size', 'world_size', 'params_dtype',
@@ -440,7 +432,7 @@ def save_checkpoint(queue, args):
 
         # Cut out extra padding we don't need
         if orig_vocab_size > margs.padded_vocab_size:
-            full_word_embed = orig_word_embed[0:margs.padded_vocab_size,:]
+            full_word_embed = orig_word_embed[0:margs.padded_vocab_size,:]  # type: ignore
 
         # Expanding embedding to larger size by replicating final entry
         elif orig_vocab_size < margs.padded_vocab_size:

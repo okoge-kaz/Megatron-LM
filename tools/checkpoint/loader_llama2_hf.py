@@ -10,7 +10,7 @@ import types
 
 
 def add_arguments(parser):
-    group = parser.add_argument_group(title='Llama/Mistral loader.')
+    group = parser.add_argument_group(title='Llama-2 HF loader.')
 
     group.add_argument('--true-vocab-size', type=int, default=None,
                        help='original size of vocab, if specified will trim padding from embedding table.')
@@ -18,7 +18,7 @@ def add_arguments(parser):
                        help='Path to the vocab file. If specified will use this to get vocab size and '
                        'trim padding from the embedding table.')
     group.add_argument('--tokenizer-model', required=True,
-                       help='Tokenizer model file.')
+                       help='Sentencepiece tokenizer model.')
     group.add_argument('--megatron-path', type=str, default=None,
                        help='Base directory of deepspeed repository')
     parser.add_argument('--bf16', action='store_true', help='Whether to load weights in bf16.')
@@ -41,7 +41,7 @@ def load_args_from_checkpoint(args):
 
     # Update Megatron args.
     args.seq_length = 4096
-    args.max_position_embeddings = llama_args["max_position_embeddings"]
+    args.max_position_embeddings = 4096
     args.hidden_size = llama_args["hidden_size"]
     args.num_attention_heads = llama_args["num_attention_heads"]
     args.num_layers = llama_args["num_hidden_layers"]
@@ -51,11 +51,13 @@ def load_args_from_checkpoint(args):
     args.add_position_embedding = False
     args.use_rotary_position_embeddings = True
     args.swiglu = True
+    args.tokenizer_type = "Llama2Tokenizer"
     args.normalization = "RMSNorm"
     args.add_bias_linear = False
     args.untie_embeddings_and_output_weights = True
     args.vocab_size = llama_args["vocab_size"]
     args.padded_vocab_size = llama_args["vocab_size"]
+    args.llama = llama_args
     args.ffn_hidden_size = llama_args["intermediate_size"]
 
     if "num_key_value_heads" in llama_args:
@@ -132,12 +134,7 @@ def load_checkpoint_to_model(args):
     '''Set model params.'''
 
     from pretrain_gpt import model_provider
-    if "llama" in args.model_size:
-        from transformers import LlamaForCausalLM as ModelForCausalLM
-    elif "mistral" in args.model_size:
-        from transformers import MistralForCausalLM as ModelForCausalLM
-    else:
-        raise AttributeError(f"args.model_size={args.model_size} not supported")
+    from transformers import LlamaForCausalLM
 
     # Load Huggingface model.
     hf_model = LlamaForCausalLM.from_pretrained(
@@ -161,6 +158,7 @@ def load_checkpoint_to_model(args):
 
 def _load_checkpoint(queue, args):
 
+    # Llama-2 requires HF transformers >=4.31.0.
     verify_transformers_version()
 
     # Search in directory above this.
@@ -203,13 +201,6 @@ def _load_checkpoint(queue, args):
     margs.tokenizer_model = args.tokenizer_model
     load_args_from_checkpoint(margs)
 
-    if "llama2" in args.model_size:
-        margs.tokenizer_type = "Llama2Tokenizer"
-    elif "llama3" in args.model_size:
-        margs.tokenizer_type = "Llama3Tokenizer"
-    elif "mistral" in args.model_size:
-        margs.tokenizer_type = "MistralTokenizer"
-
     # Arguments do sanity checks on the world size, but we don't care,
     # so trick it into thinking we are plenty of processes.
     margs.world_size = margs.tensor_model_parallel_size * margs.pipeline_model_parallel_size
@@ -239,6 +230,7 @@ def _load_checkpoint(queue, args):
     check_for_arg('num_attention_heads')
     check_for_arg('max_position_embeddings')
     check_for_arg('position_embedding_type')
+    check_for_arg('tokenizer_type')
     check_for_arg('iteration')
     check_for_arg('bert_binary_head')
     check_for_arg('disable_bias_linear', False)
@@ -246,7 +238,7 @@ def _load_checkpoint(queue, args):
     check_for_arg('swiglu', False)
 
     # Determine how to make our models.
-    assert args.model_type == 'GPT', 'Llama-2, Llama-3 and Mistral are GPT models.'
+    assert args.model_type == 'GPT', 'Llama-2 is a GPT model.'
     margs.model_type = ModelType.encoder_or_decoder
     margs.params_dtype = torch.bfloat16 if args.bf16 else torch.float16
 
@@ -291,19 +283,6 @@ def _load_checkpoint(queue, args):
     md.consumed_train_samples = 0
     md.consumed_valid_samples = 0
     md.rope_theta = margs.rope_theta
-
-    margs.model_size = args.model_size
-
-    # Get true (non-padded) vocab size
-    if margs.tokenizer_model is not None and "llama3" in args.model_size:
-        try:
-            from llama.tokenizer import Tokenizer as Llama3Tokenizer
-        except ImportError:
-            raise AssertionError("Module 'llama' is required but not installed.")
-        tokenizer = Llama3Tokenizer(margs.tokenizer_model)
-        md.true_vocab_size = tokenizer.vocab_size
-    else:
-        md.true_vocab_size = None
 
     # Get first pipe stage.
     mpu.set_tensor_model_parallel_rank(0)

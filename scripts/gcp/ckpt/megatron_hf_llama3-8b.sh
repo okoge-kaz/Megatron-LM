@@ -45,4 +45,4 @@ python tools/checkpoint/convert.py \
   --hf-tokenizer-path ${TOKENIZER_MODEL_DIR} \
   --save-dtype bfloat16 \
   --loader-transformer-impl "transformer_engine" \
-  --megatron-path /home/ext_kazuki_fujii_rio_gsic_titech/src/Megatron-LM
+  --megatron-path /home/ext_kazuki_fujii_rio_gsic_titech/src/Megatron-LM-latest
