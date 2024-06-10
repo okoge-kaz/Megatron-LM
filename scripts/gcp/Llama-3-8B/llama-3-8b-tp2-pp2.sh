@@ -2,7 +2,7 @@
 #SBATCH --job-name=llama-3-8b
 #SBATCH --partition=a3
 #SBATCH --exclusive
-#SBATCH --nodes 2
+#SBATCH --nodes 1
 #SBATCH --gpus-per-node=8
 #SBATCH --ntasks-per-node=8
 #SBATCH --output=outputs/llama-3-8b/%x-%j.out
@@ -176,9 +176,13 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --log-interval 1 \
-  --save-interval 500 \
-  --eval-interval 500 \
+  --save-interval 50 \
+  --eval-interval 10 \
   --eval-iters 10 \
+  --use-dist-ckpt \
+  --auto-detect-ckpt-format \
+  --dist-ckpt-format torch_dist \
+  --async-save \
   --bf16 \
   --untie-embeddings-and-output-weights \
   --no-position-embedding \
@@ -199,6 +203,8 @@ mpirun -np $NUM_GPUS \
   --use-mpi \
   --use-z-loss \
   --log-throughput \
+  --log-straggler \
+  --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
   --wandb-project "Megatron-LM" \
   --wandb-entity "okoge" \
