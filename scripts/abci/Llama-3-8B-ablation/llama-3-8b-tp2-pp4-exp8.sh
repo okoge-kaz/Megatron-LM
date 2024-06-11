@@ -174,10 +174,6 @@ mpirun -np $NUM_GPUS \
   --save-interval 250 \
   --eval-interval 500 \
   --eval-iters 10 \
-  --use-dist-ckpt \
-  --auto-detect-ckpt-format \
-  --dist-ckpt-format torch_dist \
-  --async-save \
   --bf16 \
   --use-checkpoint-args \
   --untie-embeddings-and-output-weights \
@@ -203,5 +199,5 @@ mpirun -np $NUM_GPUS \
   --log-straggler \
   --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "Llama-3-8B" \
+  --wandb-project "Llama-3-8B-ablation" \
   --wandb-entity "prj-jalm"
