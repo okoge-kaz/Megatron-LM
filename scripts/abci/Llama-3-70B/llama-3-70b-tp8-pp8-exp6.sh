@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=32
-#$ -l h_rt=20:00:00:00
+#$ -l h_rt=10:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3-70b/
 #$ -cwd
@@ -60,8 +60,8 @@ GLOBAL_BATCH_SIZE=1024
 TRAIN_STEPS=12500
 LR_DECAY_ITERS=12500
 
-LR=2.5e-5
-MIN_LR=2.5E-6
+LR=1.0e-5
+MIN_LR=1.0E-6
 LR_WARMUP_STEPS=1000
 WEIGHT_DECAY=0.1
 GRAD_CLIP=1

@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=4
-#$ -l h_rt=10:00:00:00
+#$ -l h_rt=7:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3-8b/
 #$ -cwd
