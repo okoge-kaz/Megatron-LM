@@ -38,7 +38,7 @@ pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.6
 git clone git@github.com:Dao-AILab/flash-attention.git
 cd flash-attention
 git checkout v2.4.2
-python setup.py install
+pip install -e .
 
 # huggingface install
 pip install transformers accelerate zarr tensorstore
