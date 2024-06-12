@@ -7,10 +7,11 @@
 
 # module load
 source /etc/profile.d/modules.sh
-module use /groups/gag51395/modules/modulefiles
+module use /bb/llm/gaf51275/modules/modulefiles
+
 module load cuda/12.1/12.1.1
 module load cudnn/cuda-12.1/9.0.0
-module load nccl/2.17/2.17.1-1
+module load nccl/2.20.5
 module load hpcx/2.12
 module load gcc/11.4.0
 
@@ -31,14 +32,7 @@ pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation -
 
 # transformer engine
 # A100 1枚だと CPU memory 不足でエラーになる
-git clone --branch stable --recursive https://github.com/NVIDIA/TransformerEngine.git
-
-cd TransformerEngine
-git checkout v1.6
-
-git submodule update --init --recursive
-export NVTE_FRAMEWORK=pytorch
-pip install .
+pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.6
 
 # flash-attention install
 git clone git@github.com:Dao-AILab/flash-attention.git
