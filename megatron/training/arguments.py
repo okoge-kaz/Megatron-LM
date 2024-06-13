@@ -910,6 +910,7 @@ def _add_logging_args(parser):
                        help='The wandb experiment name.')
     group.add_argument('--wandb-save-dir', type=str, default='',
                        help='Path to save the wandb results locally.')
+    group.add_argument('--wandb-offline', action='store_true')
     group.add_argument("--use-mpi", action="store_true", default=False)
     group.add_argument('--wandb-entity', type=str, default=None)
     group.add_argument("--wandb-id", default=None)

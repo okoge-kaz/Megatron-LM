@@ -4,12 +4,14 @@
 import argparse
 import os
 import sys
-import torch
 import typing
 
-from megatron.training import dist_signal_handler
+import torch
+
 from megatron.core import Timers
+from megatron.training import dist_signal_handler
 from megatron.training.tokenizer import build_tokenizer
+
 from .microbatches import build_num_microbatches_calculator
 
 _GLOBAL_ARGS = None
@@ -171,8 +173,9 @@ def _set_wandb_writer(args):
         if args.wandb_name is None:
             raise ValueError("Please specify the wandb experiment name!")
 
-        import wandb
         from datetime import datetime
+
+        import wandb
 
         now = datetime.now()
         now = now.strftime("%Y-%m-%d-%H-%M-%S")
@@ -182,7 +185,10 @@ def _set_wandb_writer(args):
             'entity': args.wandb_entity,
             'name': exp_name,
             'project': args.wandb_project,
-            'config': vars(args)}
+            'config': vars(args)
+        }
+        if args.wandb_offline:
+            wandb_kwargs['mode'] = 'offline'
 
         wandb.init(**wandb_kwargs)
         _GLOBAL_WANDB_WRITER = wandb
