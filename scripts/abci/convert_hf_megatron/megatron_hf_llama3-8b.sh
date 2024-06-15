@@ -7,11 +7,11 @@
 
 # Load modules
 source /etc/profile.d/modules.sh
-module use /groups/gag51395/modules/modulefiles
+module use /bb/llm/gaf51275/modules/modulefiles
 
 module load cuda/12.1/12.1.1
 module load cudnn/cuda-12.1/9.0.0
-module load nccl/2.17/2.17.1-1
+module load nccl/2.20.5
 module load hpcx/2.12
 module load gcc/11.4.0
 
@@ -22,12 +22,12 @@ source .env/bin/activate
 TENSOR_PARALLEL_SIZE=2
 PIPELINE_PARALLEL_SIZE=4
 
-ITERATION=12500
+ITERATION=2500
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/groups/gag51395/checkpoints/Llama-3-8b/ja8-en1-code1-exp5/tp2-pp4-ct1/LR2.5e-5-MINLR2.5E-6-WD0.1
-HF_CHECKPOINT_DIR=/groups/gag51395/checkpoints/megatron-to-hf/Llama-3-8b-hf/ja8-en1-code1-exp5/tp2-pp4-ct1/LR2.5e-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/exp7/tp2-pp4-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b-hf/exp7/tp2-pp4-ct1/LR2.5e-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
 mkdir -p ${HF_CHECKPOINT_DIR}
 
@@ -46,4 +46,4 @@ python tools/checkpoint/convert.py \
   --hf-tokenizer-path ${TOKENIZER_MODEL_DIR} \
   --save-dtype bfloat16 \
   --loader-transformer-impl transformer_engine \
-  --megatron-path /bb/llm/gaf51275/2024/Megatron-LM
+  --megatron-path /bb/llm/gaf51275/2024/Megatron-LM-latest
