@@ -201,6 +201,23 @@ class GPTDataset(MegatronDataset):
         tokens[tokens == self._pad_token_id] = 0
         labels[labels == self._pad_token_id] = 0
 
+        # special tokens
+        if (self.config.tokenizer.bo_sp_id is not None and self.config.tokenizer.eo_sp_id is not None):  # type: ignore
+            bo_sp_token = self.config.tokenizer.bo_sp_id  # beginning of special token  # type: ignore
+            eo_sp_token = self.config.tokenizer.eo_sp_id  # end of special token  # type: ignore
+
+            # mask between bo_sp_token and eo_sp_token
+            start_indices = (tokens == bo_sp_token).nonzero(as_tuple=True)[0]
+            end_indices = (tokens == eo_sp_token).nonzero(as_tuple=True)[0]
+
+            # torch.set_printoptions(edgeitems=100, linewidth=1000)
+            if len(start_indices) == len(end_indices):
+                for start, end in zip(start_indices, end_indices):
+                    if start < end:
+                        loss_mask[start: end + 1] = 0.0  # mask between bo_sp_token and eo_sp_token  # type: ignore
+                        # print(f"DEBUG: start={start}, end={end}, tokens={tokens[start: end+1]}, loss_mask={loss_mask[start: end + 1]}", flush=True)
+            # print(f"DEBUG: tokens={tokens}, loss_mask={loss_mask}", flush=True)
+
         # Batch padding sequence so we mask the loss
         if idx is None:
             loss_mask = torch.zeros_like(loss_mask)

@@ -1526,6 +1526,8 @@ def _add_data_args(parser):
                        help='What type of tokenizer to use.')
     group.add_argument('--tokenizer-model', type=str, default=None,
                        help='Sentencepiece tokenizer model.')
+    group.add_argument('--begin-of-special-token-id', type=int, default=None)
+    group.add_argument('--end-of-special-token-id', type=int, default=None)
     group.add_argument('--reset-position-ids', action='store_true',
                        help='Reset posistion ids after end-of-document token.')
     group.add_argument('--reset-attention-mask', action='store_true',
