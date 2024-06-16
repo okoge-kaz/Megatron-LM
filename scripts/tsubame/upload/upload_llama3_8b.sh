@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=1
-#$ -l h_rt=24:00:00
+#$ -l h_rt=5:00:00
 #$ -o outputs/upload/llama-3-8b/$JOB_ID
 #$ -e outputs/upload/llama-3-8b/$JOB_ID
 #$ -p -5
@@ -10,8 +10,8 @@ set -e
 
 source .env/bin/activate
 
-start=2500
-end=2500
+start=7500
+end=7500
 increment=2500
 
 base_dirs=(

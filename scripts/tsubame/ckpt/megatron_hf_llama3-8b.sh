@@ -7,11 +7,11 @@
 #$ -p -5
 
 # Load modules
-module use ~/modulefiles
+module use /gs/fs/tga-NII-LLM/modules/modulefiles
 
 module load ylab/cuda/12.1
 module load ylab/cudnn/8.9.7
-module load ylab/nccl/cuda-12.1/2.18.3
+module load ylab/nccl/cuda-12.2/2.20.5
 module load ylab/hpcx/2.17.1
 module load ninja/1.11.1
 
@@ -22,7 +22,7 @@ source .env/bin/activate
 TENSOR_PARALLEL_SIZE=2
 PIPELINE_PARALLEL_SIZE=2
 
-ITERATION=2500
+ITERATION=7500
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
 # model config
