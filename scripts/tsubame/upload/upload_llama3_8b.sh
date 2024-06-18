@@ -1,20 +1,21 @@
 #!/bin/sh
 #$ -cwd
-#$ -l cpu_160=1
-#$ -l h_rt=24:00:00
+#$ -l node_f=1
+#$ -l h_rt=5:00:00
 #$ -o outputs/upload/llama-3-8b/$JOB_ID
 #$ -e outputs/upload/llama-3-8b/$JOB_ID
 #$ -p -5
 
 set -e
 
-start=1500
-end=1500
-increment=500
+source .env/bin/activate
+
+start=7500
+end=7500
+increment=2500
 
 base_dirs=(
-  "/gs/bs/tgh-NII-LLM/checkpoints/megatron-to-hf/Llama-3-8b-hf/LR1.0e-5-MINLR1.0E-6-WD0.05"
-  "/gs/bs/tgh-NII-LLM/checkpoints/megatron-to-hf/Llama-3-8b-hf/LR2.5e-5-MINLR2.5E-6-WD0.05"
+  "/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3-8b-hf/exp6-docs/tp2-pp2-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1-WARMUP1000"
 )
 
 for base_dir in "${base_dirs[@]}"; do
@@ -23,6 +24,6 @@ for base_dir in "${base_dirs[@]}"; do
 
     python scripts/abci/upload/upload.py \
       --ckpt-path $upload_dir \
-      --repo-name tokyotech-llm/Llama3-8b-$(basename $base_dir)-iter$(printf "%07d" $i)
+      --repo-name tokyotech-llm/Llama3-8b-exp6-intra-doc-LR2.5E-5-MINLR2.5E-6-WD0.1-iter$(printf "%07d" $i)
   done
 done

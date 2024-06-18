@@ -48,7 +48,12 @@ def build_tokenizer(args):
         tokenizer = create_mistral_tokenizer(args.tokenizer_model)
     elif args.tokenizer_type == 'Llama3Tokenizer':
         assert args.tokenizer_model is not None
-        tokenizer = _Llama3Tokenizer(args.tokenizer_model)
+        tokenizer = _Llama3Tokenizer(
+            model_file=args.tokenizer_model,
+            vocab_extra_ids=0,
+            begin_of_special_token_id=args.begin_of_special_token_id,
+            end_of_special_token_id=args.end_of_special_token_id,
+        )
     elif args.tokenizer_type == 'NullTokenizer':
         assert args.vocab_size is not None
         tokenizer = _NullTokenizer(args.vocab_size)
@@ -497,7 +502,13 @@ class _Llama2Tokenizer(_SentencePieceTokenizer):
 
 
 class _Llama3Tokenizer(MegatronTokenizer):
-    def __init__(self, model_file: str, vocab_extra_ids=0) -> None:
+    def __init__(
+        self,
+        model_file: str,
+        vocab_extra_ids=0,
+        begin_of_special_token_id: Optional[int] = None,
+        end_of_special_token_id: Optional[int] = None,
+    ) -> None:
         self.name = "Llama3Tokenizer"
         super().__init__(model_file, vocab_extra_ids=vocab_extra_ids)
 
@@ -508,75 +519,16 @@ class _Llama3Tokenizer(MegatronTokenizer):
         self.bos_id: Optional[int] = self.tokenizer.bos_token_id
         self.eos_id: Optional[int] = self.tokenizer.eos_token_id
         self.pad_id: Optional[int] = self.tokenizer.pad_token_id
+        self.bo_sp_id: Optional[int] = begin_of_special_token_id
+        self.eo_sp_id: Optional[int] = end_of_special_token_id
 
         assert self.tokenizer.pad_token_id is None
         assert self.tokenizer.bos_token_id is not None and self.tokenizer.bos_token_id == 128000
         assert self.tokenizer.eos_token_id is not None and self.tokenizer.eos_token_id == 128001
         assert len(self.tokenizer) >= 128256, f"vocab_size: {len(self.tokenizer)}"
 
-    def tokenize(self, text: str, bos=True, eos=False):
-        '''Default args for text completion, not chat/dialog.'''
-        assert type(text) is str
-        t = self.tokenizer.encode(text, add_special_tokens=False)  # type: ignore
-        if bos and self.bos_id is not None:
-            t = [self.bos_id] + t
-        if eos and self.eos_id is not None:
-            t = t + [self.eos_id]
-        return t
-
-    def detokenize(self, ids: list[int]):
-        return self.tokenizer.decode(ids, skip_special_tokens=True)
-
-    @property
-    def cls(self):
-        return -1
-
-    @property
-    def sep(self):
-        return -1
-
-    @property
-    def mask(self):
-        return -1
-
-    @property
-    def eod(self):
-        return self.tokenizer.eos_token_id
-
-    @property
-    def additional_special_tokens_ids(self):
-        return None
-
-    @property
-    def vocab(self):
-        return self.tokenizer.get_vocab()
-
-    @property
-    def inv_vocab(self):
-        return {v: k for k, v in self.tokenizer.get_vocab().items()}
-
-    @property
-    def vocab_size(self):
-        return len(self.tokenizer)
-
-
-class _Llama3Tokenizer(MegatronTokenizer):
-    def __init__(self, model_file: str, vocab_extra_ids=0) -> None:
-        self.name = "Llama3Tokenizer"
-        super().__init__(model_file, vocab_extra_ids=vocab_extra_ids)
-
-        from transformers import AutoTokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            pretrained_model_name_or_path=os.path.dirname(model_file)
-        )
-        self.bos_id: Optional[int] = self.tokenizer.bos_token_id
-        self.eos_id: Optional[int] = self.tokenizer.eos_token_id
-        self.pad_id: Optional[int] = self.tokenizer.pad_token_id
-
-        assert self.tokenizer.pad_token_id is None
-        assert self.tokenizer.bos_token_id is not None and self.tokenizer.bos_token_id == 128000
-        assert self.tokenizer.eos_token_id is not None and self.tokenizer.eos_token_id == 128001
-        assert len(self.tokenizer) >= 128256, f"vocab_size: {len(self.tokenizer)}"
+        assert self.bo_sp_id is None or self.bo_sp_id == 128002
+        assert self.eo_sp_id is None or self.eo_sp_id == 128003
 
     def tokenize(self, text: str, bos=True, eos=False):
         '''Default args for text completion, not chat/dialog.'''

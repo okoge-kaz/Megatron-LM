@@ -910,6 +910,7 @@ def _add_logging_args(parser):
                        help='The wandb experiment name.')
     group.add_argument('--wandb-save-dir', type=str, default='',
                        help='Path to save the wandb results locally.')
+    group.add_argument('--wandb-offline', action='store_true')
     group.add_argument("--use-mpi", action="store_true", default=False)
     group.add_argument('--wandb-entity', type=str, default=None)
     group.add_argument("--wandb-id", default=None)
@@ -1525,6 +1526,8 @@ def _add_data_args(parser):
                        help='What type of tokenizer to use.')
     group.add_argument('--tokenizer-model', type=str, default=None,
                        help='Sentencepiece tokenizer model.')
+    group.add_argument('--begin-of-special-token-id', type=int, default=None)
+    group.add_argument('--end-of-special-token-id', type=int, default=None)
     group.add_argument('--reset-position-ids', action='store_true',
                        help='Reset posistion ids after end-of-document token.')
     group.add_argument('--reset-attention-mask', action='store_true',
