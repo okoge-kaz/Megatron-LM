@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -l rt_AF=16
-#$ -l h_rt=10:00:00:00
+#$ -l rt_AF=4
+#$ -l h_rt=8:00:30:00
 #$ -j y
 #$ -o outputs/Llama-3-8b-ablation/
 #$ -cwd
@@ -197,7 +197,6 @@ mpirun -np $NUM_GPUS \
   --use-z-loss \
   --log-throughput \
   --log-straggler \
-  --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
   --wandb-project "Llama-3-8B-ablation" \
   --wandb-entity "prj-jalm"
