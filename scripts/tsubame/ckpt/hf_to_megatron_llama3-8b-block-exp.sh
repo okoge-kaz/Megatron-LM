@@ -2,8 +2,8 @@
 #$ -cwd
 #$ -l node_f=1
 #$ -l h_rt=1:00:00
-#$ -o outputs/convert/hf_megatron/$JOB_ID
-#$ -e outputs/convert/hf_megatron/$JOB_ID
+#$ -o outputs/convert/hf_megatron/$JOB_ID.log
+#$ -e outputs/convert/hf_megatron/$JOB_ID.log
 #$ -p -5
 
 # Load modules

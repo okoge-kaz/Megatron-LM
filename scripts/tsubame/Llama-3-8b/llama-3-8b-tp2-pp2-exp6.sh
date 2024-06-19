@@ -1,9 +1,9 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=16
-#$ -l h_rt=60:00:00
-#$ -o outputs/Llama-3-8b/$JOB_ID
-#$ -e outputs/Llama-3-8b/$JOB_ID
+#$ -l h_rt=24:00:00
+#$ -o outputs/Llama-3-8b/$JOB_ID.log
+#$ -e outputs/Llama-3-8b/$JOB_ID.log
 #$ -p -5
 
 # Load modules

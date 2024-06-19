@@ -2,8 +2,8 @@
 #$ -cwd
 #$ -l node_f=16
 #$ -l h_rt=77:00:00
-#$ -o outputs/Llama-3-8b-block-expansion/$JOB_ID
-#$ -e outputs/Llama-3-8b-block-expansion/$JOB_ID
+#$ -o outputs/Llama-3-8b-block-expansion/$JOB_ID.log
+#$ -e outputs/Llama-3-8b-block-expansion/$JOB_ID.log
 #$ -p -5
 
 # Load modules
