@@ -69,6 +69,7 @@ GRAD_CLIP=1
 
 # model config
 TOKENIZER_MODEL=/bb/llm/gaf51275/hf-checkpoints/meta-tag-Llama-3-8B/tokenizer.json
+CHECKPOINT_DIR=/groups/gag51395/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
 CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b-meta-tag/exp4/tp2-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1-WARMUP1000
 
 echo ${CHECKPOINT_SAVE_DIR}
@@ -79,10 +80,10 @@ mkdir -p ${CHECKPOINT_SAVE_DIR}
 TRAIN_DATA_PATH=""
 
 # ja wiki/domain
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1700659905 /bb/llm/gaf51275/datasets/binarized/Meta-tag-Meta-Llama-3_original_transformers-4.40.1/wiki-domain_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1700659905 /bb/llm/gaf51275/datasets/Meta-tag-Meta-Llama-3_original_transformers-4.40.1/wiki-domain_text_document"
 
 # swallow:filter-domain
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 98299340095 /bb/llm/gaf51275/datasets/binarized/Meta-tag-Meta-Llama-3_original_transformers-4.40.1/filter-domain_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 98299340095 /bb/llm/gaf51275/datasets/Meta-tag-Meta-Llama-3_original_transformers-4.40.1/filter-domain_text_document"
 
 # job name
 JOB_NAME="Llama-3-8b-meta-tag-exp4-ABCI-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
