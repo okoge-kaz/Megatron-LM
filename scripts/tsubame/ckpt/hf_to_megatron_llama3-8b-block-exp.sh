@@ -19,7 +19,7 @@ module load ninja/1.11.1
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=2
+TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=2
 
 # model config
