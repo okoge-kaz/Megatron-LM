@@ -171,7 +171,6 @@ mpirun -np $NUM_GPUS \
   --use-mpi \
   --use-z-loss \
   --log-throughput \
-  --log-straggler \
   --wandb-name ${JOB_NAME} \
   --wandb-project "Llama-3-8B-meta-tag" \
   --wandb-entity "prj-jalm"
