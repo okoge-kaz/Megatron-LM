@@ -226,7 +226,7 @@ mpirun -np $NUM_GPUS \
   ${CHECKPOINT_ARGS} \
   --save ${CHECKPOINT_SAVE_DIR} \
   --data-path ${TRAIN_DATA_PATH} \
-  --split 998,1,1 \
+  --split 995,5,0 \
   --distributed-backend nccl \
   --init-method-std 0.02 \
   --lr ${LR} \
