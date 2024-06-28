@@ -21,16 +21,16 @@ source .env/bin/activate
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=8
-PIPELINE_PARALLEL_SIZE=4
+PIPELINE_PARALLEL_SIZE=8
 
 # model config
-HF_CHECKPOINT_DIR=/data/hf_checkpoint/Meta-Llama-3-70B
-MEGATRON_CHECKPOINT_DIR=/data/checkpoints/hf-to-megatron/Llama-3-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+HF_CHECKPOINT_DIR=~/hf_checkpoint/Meta-Llama-3-70B
+MEGATRON_CHECKPOINT_DIR=~/checkpoints/hf-to-megatron/Llama-3-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
 
 mkdir -p ${MEGATRON_CHECKPOINT_DIR}
 
 # tokenizer config
-TOKENIZER_MODEL=/data/hf_checkpoint/Meta-Llama-3-70B/tokenizer.json
+TOKENIZER_MODEL=~/hf_checkpoint/Meta-Llama-3-70B/tokenizer.json
 
 # convert
 python tools/checkpoint/convert.py \
