@@ -1,31 +1,24 @@
 #!/bin/bash
-#SBATCH --job-name=tokenize
-#SBATCH --time=3:00:00
-#SBATCH --partition=a3
-#SBATCH --nodes 1
-#SBATCH --gpus-per-node=8
-#SBATCH --ntasks-per-node=8
-#SBATCH --output=outputs/tokenize/%x-%j.out
-#SBATCH --error=outputs/tokenize/%x-%j.out
 
 # module load
-module load cuda/12.1
-module load cudnn/8.9.7
-module load hpcx/2.17.1
+module load turing/cuda/12.1
+module load turing/cudnn/8.9.7
+module load turing/nccl/2.20.5
+module load turing/hpcx/2.17.1
 
 # python virtualenv
 source .env/bin/activate
 
-DATASET_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/datasets/samples
-OUTPUT_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/datasets/samples
+DATASET_DIR=/home/ext_kazuki_fujii_turing_motors_c/datasets/raw
+OUTPUT_DIR=/home/ext_kazuki_fujii_turing_motors_c/datasets/binarized
 
 mkdir -p ${OUTPUT_DIR}
 
 # tokenize japanese wikipedia
 python tools/preprocess_data.py \
-  --input ${DATASET_DIR}/ja_wiki.jsonl \
+  --input ${DATASET_DIR}/ja_wiki_merged.jsonl \
   --output-prefix ${OUTPUT_DIR}/ja_wiki \
   --tokenizer-type Llama3Tokenizer \
-  --tokenizer-model /home/ext_kazuki_fujii_rio_gsic_titech/hf_checkpoints/Meta-Llama-3-8B/tokenizer.jsonl \
+  --tokenizer-model /home/ext_kazuki_fujii_turing_motors_c/hf-checkpoints/Meta-Llama-3-8B/tokenizer.jsonl \
   --append-eod \
-  --workers 64
+  --workers 16
