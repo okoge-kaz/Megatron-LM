@@ -2,7 +2,7 @@
 #SBATCH --job-name=llama-3-8b
 #SBATCH --partition=a3
 #SBATCH --exclusive
-#SBATCH --nodes 1
+#SBATCH --nodes 2
 #SBATCH --gpus-per-node=8
 #SBATCH --ntasks-per-node=8
 #SBATCH --output=outputs/llama-3-8b/%x-%j.out
@@ -11,10 +11,10 @@
 set -e
 
 # module load
-module load cuda/12.1
-module load cudnn/8.9.7
-module load hpcx/2.17.1
-module load nccl/2.20.5
+module load turing/cuda/12.1
+module load turing/cudnn/8.9.7
+module load turing/nccl/2.20.5
+module load turing/hpcx/2.17.1
 
 # open file limit
 ulimit -n 65536 1048576
@@ -95,7 +95,7 @@ DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALL
 
 # training config
 MICRO_BATCH_SIZE=1
-GLOBAL_BATCH_SIZE=1024
+GLOBAL_BATCH_SIZE=512
 TRAIN_STEPS=25000
 LR_DECAY_ITERS=25000
 
@@ -106,14 +106,14 @@ WEIGHT_DECAY=0.1
 GRAD_CLIP=1
 
 # model config
-TOKENIZER_MODEL=/home/ext_kazuki_fujii_rio_gsic_titech/hf_checkpoints/Meta-Llama-3-8B/tokenizer.json
-CHECKPOINT_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/checkpoints/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}
+TOKENIZER_MODEL=~/hf-checkpoints/Meta-Llama-3-8B/tokenizer.json
+CHECKPOINT_DIR=~/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+CHECKPOINT_SAVE_DIR=~/checkpoints/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
 # data config
-DATASET_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/datasets/samples
+DATASET_DIR=~/datasets/binarized/Llama-3-tokenizer/
 
 TRAIN_DATA_PATH=""
 
@@ -176,8 +176,8 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --log-interval 1 \
-  --save-interval 50 \
-  --eval-interval 10 \
+  --save-interval 500 \
+  --eval-interval 500 \
   --eval-iters 10 \
   --use-dist-ckpt \
   --auto-detect-ckpt-format \
@@ -204,8 +204,8 @@ mpirun -np $NUM_GPUS \
   --use-z-loss \
   --log-throughput \
   --log-straggler \
-  --disable-straggler-on-startup \
+  --reset-position-ids \
+  --reset-attention-mask \
   --wandb-name ${JOB_NAME} \
   --wandb-project "Megatron-LM" \
-  --wandb-entity "okoge" \
-  --use-gcp-dynamic-checkpointing
+  --wandb-entity "turing-geniac"
