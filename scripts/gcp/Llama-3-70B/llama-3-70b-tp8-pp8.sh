@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=llama-3-8b
+#SBATCH --job-name=llama-3-70b
 #SBATCH --partition=a3
 #SBATCH --exclusive
-#SBATCH --nodes 2
+#SBATCH --nodes 8
 #SBATCH --gpus-per-node=8
 #SBATCH --ntasks-per-node=8
-#SBATCH --output=outputs/llama-3-8b/%x-%j.out
-#SBATCH --error=outputs/llama-3-8b/%x-%j.out
+#SBATCH --output=outputs/llama-3-70b/%x-%j.out
+#SBATCH --error=outputs/llama-3-70b/%x-%j.out
 
 set -e
 
@@ -77,38 +77,37 @@ NODE_TYPE="H100"
 NUM_NODES=$SLURM_JOB_NUM_NODES
 NUM_GPUS=$((${NUM_NODES} * ${NUM_GPU_PER_NODE}))
 
-
 # model config
-# llama-3-8b: https://huggingface.co/meta-llama/Meta-Llama-3-8B/blob/main/config.json
-HIDDEN_SIZE=4096
-FFN_HIDDEN_SIZE=14336 # intermediate size (HuggingFace)
-NUM_LAYERS=32
-NUM_HEADS=32
+# llama-3-70b: https://huggingface.co/meta-llama/Meta-Llama-3-70B/blob/main/config.json
+HIDDEN_SIZE=8192
+FFN_HIDDEN_SIZE=28672 # intermediate size (HuggingFace)
+NUM_LAYERS=80
+NUM_HEADS=64
 NUM_KEY_VALUE_HEADS=8
 SEQ_LENGTH=8192
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=2  # fixed
-PIPELINE_PARALLEL_SIZE=2 # num layers 32: Llama-2 8B
+TENSOR_PARALLEL_SIZE=8
+PIPELINE_PARALLEL_SIZE=8
 CONTEXT_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
 # training config
 MICRO_BATCH_SIZE=1
-GLOBAL_BATCH_SIZE=512
-TRAIN_STEPS=25000
-LR_DECAY_ITERS=25000
+GLOBAL_BATCH_SIZE=1024
+TRAIN_STEPS=12500
+LR_DECAY_ITERS=12500
 
 LR=2.5e-5
 MIN_LR=2.5E-6
-LR_WARMUP_STEPS=2000
+LR_WARMUP_STEPS=1000
 WEIGHT_DECAY=0.1
 GRAD_CLIP=1
 
 # model config
-TOKENIZER_MODEL=/home/ext_kazuki_fujii_turing_motors_c/hf-checkpoints/Meta-Llama-3-8B/tokenizer.json
-CHECKPOINT_DIR=/home/ext_kazuki_fujii_turing_motors_c/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/home/ext_kazuki_fujii_turing_motors_c/checkpoints/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}
+TOKENIZER_MODEL=/home/ext_kazuki_fujii_turing_motors_c/hf-checkpoints/Meta-Llama-3-70B/tokenizer.json
+CHECKPOINT_DIR=/home/ext_kazuki_fujii_turing_motors_c/checkpoints/hf-to-megatron/Llama-3-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+CHECKPOINT_SAVE_DIR=/home/ext_kazuki_fujii_turing_motors_c/checkpoints/Llama-3-70b/exp6/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
@@ -121,7 +120,7 @@ TRAIN_DATA_PATH=""
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 2563804308 ${DATASET_DIR}/ja_wiki_text_document"
 
 # job name
-JOB_NAME="llama-3-8b-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
+JOB_NAME="Llama-3-70b-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
 
 # checkpoint load
 if [[ -f "${CHECKPOINT_SAVE_DIR}/latest_checkpointed_iteration.txt" ]]; then
@@ -132,26 +131,22 @@ else
   CHECKPOINT_ARGS="--load ${CHECKPOINT_DIR} --no-load-rng --no-load-optim"
 fi
 
-# --no-initialization : for continual pre-training (for saving time)
-# --log-params-norm : a little overhead (4 TFLOP/s down)
-# --empty-unused-memory-level: a little overhead (10 TFLOP/s down)
-# --use-dist-ckpt, --dist-ckpt-format torch_dist: checkpoint converter does not support
-
 # run
 mpirun -np $NUM_GPUS \
   --npernode $NUM_GPU_PER_NODE \
   -x MASTER_ADDR=$MASTER_ADDR \
   -x MASTER_PORT=$MASTER_PORT \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
-  -bind-to none -map-by slot \
   -x LD_LIBRARY_PATH \
   -x PATH \
+  -bind-to none -map-by slot \
   python pretrain_gpt.py \
   --tensor-model-parallel-size ${TENSOR_PARALLEL_SIZE} \
   --pipeline-model-parallel-size ${PIPELINE_PARALLEL_SIZE} \
   --context-parallel-size ${CONTEXT_PARALLEL_SIZE} \
   --sequence-parallel \
   --use-distributed-optimizer \
+  --distributed-timeout-minutes 15 \
   --num-layers ${NUM_LAYERS} \
   --hidden-size ${HIDDEN_SIZE} \
   --ffn-hidden-size ${FFN_HIDDEN_SIZE} \
@@ -182,10 +177,9 @@ mpirun -np $NUM_GPUS \
   --adam-beta2 0.95 \
   --adam-eps 1e-5 \
   --log-interval 1 \
-  --save-interval 50 \
+  --save-interval 20 \
   --eval-interval 500 \
   --eval-iters 10 \
-  --async-save \
   --bf16 \
   --untie-embeddings-and-output-weights \
   --no-position-embedding \

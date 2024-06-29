@@ -433,6 +433,7 @@ def save_checkpoint(queue, args):
         # Cut out extra padding we don't need
         if orig_vocab_size > margs.padded_vocab_size:
             full_word_embed = orig_word_embed[0:margs.padded_vocab_size,:]  # type: ignore
+            raise Exception("This should not happen, as we should have padded the vocab size to be larger than the original.")
 
         # Expanding embedding to larger size by replicating final entry
         elif orig_vocab_size < margs.padded_vocab_size:
@@ -441,6 +442,7 @@ def save_checkpoint(queue, args):
             full_word_embed = torch.cat((
                 orig_word_embed,
                 orig_word_embed[-1].unsqueeze(0).expand(padding_size, -1)))
+            raise Exception("This should not happen, as we should have padded the vocab size to be larger than the original.")
 
         # Same size!
         else:

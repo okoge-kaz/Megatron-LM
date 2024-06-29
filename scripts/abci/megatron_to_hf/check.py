@@ -11,8 +11,13 @@ def compare_state_dicts(original_state_dict, converted_state_dict):
             differences[key] = ("Only in original state_dict", )
             continue
 
-        if not torch.equal(original_state_dict[key], converted_state_dict[key]):
-            differences[key] = (original_state_dict[key].numpy(), converted_state_dict[key].numpy())  # テンソルの値をnumpy配列として保存
+        original_tensor = original_state_dict[key]
+        converted_tensor = converted_state_dict[key]
+
+        if not torch.equal(original_tensor, converted_tensor):
+            # それぞれのテンソルの違いを計算
+            diff = original_tensor - converted_tensor
+            differences[key] = (original_tensor.numpy(), converted_tensor.numpy(), diff.numpy())
 
     for key in converted_state_dict.keys():
         if key not in original_state_dict:
@@ -46,10 +51,14 @@ diffs = compare_state_dicts(
     converted_state_dict=converted_state_dict
 )
 
+torch.set_printoptions(threshold=10000, precision=10)
+
 for key, values in diffs.items():
     print(f"Key: {key}")
-    if len(values) == 2:
-        print(f"  original Value (Shape {values[0].shape}):\n{values[0]}")
-        print(f"  converted 2 Value (Shape {values[1].shape}):\n{values[1]}")
+    if len(values) == 3:
+        original_value, converted_value, diff = values
+        print(f"  original Value (Shape {original_value.shape}):\n{original_value}")
+        print(f"  converted Value (Shape {converted_value.shape}):\n{converted_value}")
+        print(f"  Difference (Shape {diff.shape}):\n{diff}")
     else:
         print(f"  {values[0]}")

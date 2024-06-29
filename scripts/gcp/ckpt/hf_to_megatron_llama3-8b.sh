@@ -24,13 +24,13 @@ TENSOR_PARALLEL_SIZE=2
 PIPELINE_PARALLEL_SIZE=2
 
 # model config
-HF_CHECKPOINT_DIR=~/hf-checkpoints/Meta-Llama-3-8B
-MEGATRON_CHECKPOINT_DIR=~/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+HF_CHECKPOINT_DIR=/home/ext_kazuki_fujii_turing_motors_c/hf-checkpoints/Meta-Llama-3-8B
+MEGATRON_CHECKPOINT_DIR=/home/ext_kazuki_fujii_turing_motors_c/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
 
 mkdir -p ${MEGATRON_CHECKPOINT_DIR}
 
 # tokenizer config
-TOKENIZER_MODEL=~/hf_checkpoint/Meta-Llama-3-8B/tokenizer.json
+TOKENIZER_MODEL=/home/ext_kazuki_fujii_turing_motors_c/hf_checkpoint/Meta-Llama-3-8B/tokenizer.json
 
 # convert
 python tools/checkpoint/convert.py \

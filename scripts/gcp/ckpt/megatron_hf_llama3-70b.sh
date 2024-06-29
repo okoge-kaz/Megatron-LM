@@ -24,22 +24,22 @@ ulimit -n 65536 1048576
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=2
-PIPELINE_PARALLEL_SIZE=2
+TENSOR_PARALLEL_SIZE=8
+PIPELINE_PARALLEL_SIZE=8
 
-ITERATION=50
+ITERATION=1
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/home/ext_kazuki_fujii_turing_motors_c/checkpoints/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1
-HF_CHECKPOINT_DIR=/home/ext_kazuki_fujii_turing_motors_c/checkpoints/megatron-to-hf/Llama-3-8b
+MEGATRON_CHECKPOINT_DIR=/home/ext_kazuki_fujii_turing_motors_c/checkpoints/hf-to-megatron/Llama-3-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+HF_CHECKPOINT_DIR=/home/ext_kazuki_fujii_turing_motors_c/checkpoints/megatron-to-hf/Llama-3-70b
 
 mkdir -p ${HF_CHECKPOINT_DIR}
 
 echo $ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
 
 # tokenizer config
-TOKENIZER_MODEL_DIR=/home/ext_kazuki_fujii_turing_motors_c/hf-checkpoints/Meta-Llama-3-8B
+TOKENIZER_MODEL_DIR=/home/ext_kazuki_fujii_turing_motors_c/hf-checkpoints/Meta-Llama-3-70B
 
 # convert
 python tools/checkpoint/convert.py \
