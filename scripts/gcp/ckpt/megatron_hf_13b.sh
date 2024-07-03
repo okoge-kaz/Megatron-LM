@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=ckpt-convert
-#SBATCH --time=8:00:00
+#SBATCH --time=5:00:00
 #SBATCH --partition=a3
 #SBATCH --exclusive
 #SBATCH --nodes 1
@@ -23,31 +23,17 @@ ulimit -n 65536 1048576
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=4
-PIPELINE_PARALLEL_SIZE=16
-
-ITERATION=160000
-FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
+TENSOR_PARALLEL_SIZE=2
+PIPELINE_PARALLEL_SIZE=2
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/checkpoints/Llama-2-172b
-HF_CHECKPOINT_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/checkpoints/megatron-to-hf/Llama-2-172b-hf/iter_${FORMATTED_ITERATION}
+MEGATRON_CHECKPOINT_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/checkpoints/Llama-2-13b
+HF_CHECKPOINT_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/checkpoints/megatron-to-hf/Llama-2-13b-hf
 
 mkdir -p ${HF_CHECKPOINT_DIR}
 
-# iteration
-LATEST_ITERATION=$(cat ${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt)
-if [ $ITERATION -gt $LATEST_ITERATION ]; then
-  echo "ERROR: Invalid iteration"
-  exit 1
-fi
-
-echo $ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
-
 # tokenizer config
 TOKENIZER_MODEL_DIR=/home/ext_kazuki_fujii_rio_gsic_titech/llm-jp-tokenizer/models/ver3.0
-
-echo "Converting iteration $ITERATION"
 
 # convert
 python tools/checkpoint/convert.py \
@@ -61,12 +47,3 @@ python tools/checkpoint/convert.py \
   --save-dtype bfloat16 \
   --loader-transformer-impl "transformer_engine" \
   --megatron-path /home/ext_kazuki_fujii_rio_gsic_titech/src/Megatron-LM
-
-echo "Converted iteration $ITERATION"
-
-cp $TOKENIZER_MODEL_DIR/llm-jp-tokenizer-100k.ver3.0b1.model $HF_CHECKPOINT_DIR/tokenizer.model
-
-# undo latest iteration
-echo $LATEST_ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
-
-echo "uploading iteration $ITERATION"
