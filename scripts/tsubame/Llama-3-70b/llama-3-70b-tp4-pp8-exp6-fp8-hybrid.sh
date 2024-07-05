@@ -1,17 +1,17 @@
 #!/bin/sh
 #$ -cwd
-#$ -l node_f=16
+#$ -l node_f=32
 #$ -l h_rt=120:00:00
 #$ -o outputs/Llama-3-70b/$JOB_ID
 #$ -e outputs/Llama-3-70b/$JOB_ID
 #$ -p -5
 
 # Load modules
-module use ~/modulefiles
+module use /gs/fs/tga-NII-LLM/modules/modulefiles
 
 module load ylab/cuda/12.1
 module load ylab/cudnn/8.9.7
-module load ylab/nccl/cuda-12.1/2.18.3
+module load ylab/nccl/cuda-12.2/2.20.5
 module load ylab/hpcx/2.17.1
 module load ninja/1.11.1
 
@@ -66,9 +66,9 @@ WEIGHT_DECAY=0.1
 GRAD_CLIP=1
 
 # model config
-TOKENIZER_MODEL=/gs/bs/tga-bayes-crest/fujii/hf-checkpoints/Meta-Llama-3-70B/tokenizer.json
+TOKENIZER_MODEL=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3-70B/tokenizer.json
 CHECKPOINT_DIR=/gs/bs/tgh-NII-LLM/checkpoints/hf-to-megatron/Llama-3-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/gs/bs/tgh-NII-LLM/checkpoints/Llama-3-70B/swallow-exp2/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}-LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
+CHECKPOINT_SAVE_DIR=/gs/bs/tga-NII-LLM/Llama-3-70B/exp6-fp8/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}-LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
@@ -76,41 +76,40 @@ mkdir -p ${CHECKPOINT_SAVE_DIR}
 TRAIN_DATA_PATH=""
 
 # ja swallow
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 8180778786 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/split_0_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 8100325805 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/split_1_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 9661681216 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/split_2_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 12740161714 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/split_3_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 29625840901 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/split_4_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 9679346409 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/split_0_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 9584155928 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/split_1_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 11431522821 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/split_2_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 15073924105 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/split_3_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 35052747941 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/split_4_text_document"
 
 # ja wiki
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1691211578 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/ja_wiki_merged_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1691211578 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/ja_wiki_merged_text_document"
 
 # en parallel corpus
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 882674099 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/default_plain_text_format_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 882674099 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/default_plain_text_format_text_document"
 
-# en arxiv
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5000000000 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/lumi_en_arxiv_merge_text_document"
+# en wiki
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 2051715275 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/en_wiki_merged_train_text_document"
 
 # en refinedweb
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5000000000 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/lumi_en_falcon_merge_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 2051715275 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/lumi_en_falcon_merge_text_document"
 
-# code algebric stack
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4302726319 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/algebraic-stack_text_document"
+# en cosmopedia
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1263578064.0 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_automathtext_train_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 19942247.0 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_khanacademy_train_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 94699565.0 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_openstax_train_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 912258371.0 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_stanford_train_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 2617815328.0 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_stories_train_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 156376851.0 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_wikihow_train_text_document"
 
-# code the vault
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4302726319 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/The_Vault_text_document"
+# code algebraic
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 3718158072 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/algebraic-stack_text_document"
 
-# code starcoder
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4302726319 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/starcoderdata_jsonl_1_10_merged_file_text_document"
-
-# code starcoder ja
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1906420627 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/starcoderdata_ja_text_document"
-
-# code open-web-math
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4302726319 /gs/fs/tgh-NII-LLM/Meta-Llama-3_original_transformers-4.40.1/proof-pile-2-train_merged_open-web-math_text_document"
+# math open-web-math
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 3718158072 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/proof-pile-2-train_merged_open-web-math_text_document"
 
 # job name
-JOB_NAME="Llama-3-70b-exp2-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
+JOB_NAME="Llama-3-70b-fp8-hybrid-exp6-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
 
 # checkpoint load
 if [[ -f "${CHECKPOINT_SAVE_DIR}/latest_checkpointed_iteration.txt" ]]; then
@@ -149,6 +148,7 @@ mpirun -np $NUM_GPUS \
   --micro-batch-size ${MICRO_BATCH_SIZE} \
   --global-batch-size ${GLOBAL_BATCH_SIZE} \
   --train-iters ${TRAIN_STEPS} \
+  --no-initialization \
   --tokenizer-type Llama3Tokenizer \
   --tokenizer-model ${TOKENIZER_MODEL} \
   ${CHECKPOINT_ARGS} \
