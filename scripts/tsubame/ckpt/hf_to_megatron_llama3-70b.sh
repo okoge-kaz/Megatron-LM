@@ -2,8 +2,8 @@
 #$ -cwd
 #$ -l node_f=1
 #$ -l h_rt=3:00:00
-#$ -o outputs/convert/hf_megatron/$JOB_ID
-#$ -e outputs/convert/hf_megatron/$JOB_ID
+#$ -o outputs/convert/hf_megatron/$JOB_ID.out
+#$ -e outputs/convert/hf_megatron/$JOB_ID.out
 #$ -p -5
 
 # Load modules
@@ -24,12 +24,12 @@ PIPELINE_PARALLEL_SIZE=8
 
 # model config
 HF_CHECKPOINT_DIR=/gs/bs/tga-bayes-crest/fujii/hf-checkpoints/Meta-Llama-3-70B
-MEGATRON_CHECKPOINT_DIR=/gs/bs/tgh-NII-LLM/checkpoints/hf-to-megatron/Llama-3-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
 
 mkdir -p ${MEGATRON_CHECKPOINT_DIR}
 
 # tokenizer config
-TOKENIZER_MODEL=/gs/bs/tga-bayes-crest/fujii/hf-checkpoints/Meta-Llama-3-70B/tokenizer.json
+TOKENIZER_MODEL=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3-70B/tokenizer.json
 
 # convert
 python tools/checkpoint/convert.py \
