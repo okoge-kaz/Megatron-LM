@@ -582,6 +582,7 @@ def _load_base_checkpoint(load_dir, rank0=False, sharded_state_dict=None,
         if args.ckpt_fully_parallel_load:
             load_strategy = FullyParallelLoadStrategyWrapper(load_strategy,
                                                              mpu.get_data_parallel_group(with_context_parallel=True))
+        # print(f"DEBUG: dist_checkpointing.load with load_strategy={load_strategy}, sharded_state_dict={sharded_state_dict}")
         state_dict = dist_checkpointing.load(sharded_state_dict, checkpoint_name, load_strategy)
         return state_dict, checkpoint_name, release
 
@@ -758,6 +759,7 @@ def load_checkpoint(model, optimizer, opt_param_scheduler, load_arg='load', stri
                 load_kwargs['sharded_state_dict'] = generate_state_dict(args, model, optimizer, opt_param_scheduler,
                                                                         rng_state, args.use_dist_ckpt, optim_sd_kwargs=optim_sd_kwargs)
             load_kwargs['exit_on_missing_checkpoint'] = args.exit_on_missing_checkpoint
+        # print(f"DEBUG: load_checkpoint with load_kwargs={load_kwargs}", flush=True)
 
     state_dict, checkpoint_name, release = _load_base_checkpoint(load_dir, rank0=False, **load_kwargs)
 

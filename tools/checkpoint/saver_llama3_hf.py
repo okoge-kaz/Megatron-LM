@@ -61,7 +61,9 @@ def save_checkpoint(queue: mp.Queue, args):
             print("Exiting. If you want to ignore this, use the argument --no-checking.")
             exit(1)
 
+    print(f"Saving model to {args.save_dir} ...", flush=True)
     md = queue_get()
+    print(f"Received model type: {md.model_type}", flush=True)
 
     # Verify compatibility of args
     assert hasattr(md, 'checkpoint_args')

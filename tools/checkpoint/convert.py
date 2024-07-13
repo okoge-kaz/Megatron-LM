@@ -148,6 +148,7 @@ def main():
 
     print("Waiting for saver to complete...")
     saver_proc.join()
+    print("Saver completed.")
 
 
 if __name__ == '__main__':

@@ -1,9 +1,9 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=2
-#$ -l h_rt=2:00:00
-#$ -o outputs/Llama-3-8b-meta/$JOB_ID
-#$ -e outputs/Llama-3-8b-meta/$JOB_ID
+#$ -l h_rt=3:00:00
+#$ -o outputs/Llama-3-8b-meta/$JOB_ID.log
+#$ -e outputs/Llama-3-8b-meta/$JOB_ID.log
 #$ -p -5
 
 # Load modules
@@ -66,19 +66,19 @@ WEIGHT_DECAY=0.1
 GRAD_CLIP=1
 
 # model config
-TOKENIZER_MODEL=/gs/bs/tga-NII-LLM/hf-checkpoints/meta-tag-Llama-3-8B/tokenizer.json
-CHECKPOINT_DIR=/gs/bs/tgh-NII-LLM/checkpoints/hf-to-megatron/meta-tag-Llama-3-8B/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3-8b/meta-tag-debug/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}-LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}-WARMUP${LR_WARMUP_STEPS}
+TOKENIZER_MODEL=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3-8B/tokenizer.json
+CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+CHECKPOINT_SAVE_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3-8b/dist-ckpt/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}-LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}-WARMUP${LR_WARMUP_STEPS}-no-dist
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
 # data config
 TRAIN_DATA_PATH=""
 
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} /gs/bs/tga-NII-LLM/binarized/swallow-meta-tag/ja-wiki-category_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1691211578 /gs/bs/tga-bayes-crest/Swallow/binarized/Meta-Llama-3_original_transformers-4.40.1/ja_wiki_merged_text_document"
 
 # job name
-JOB_NAME="Llama-3-8b-T4-meta-tag--${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
+JOB_NAME="Llama-3-8b-T4-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
 
 # checkpoint load
 if [[ -f "${CHECKPOINT_SAVE_DIR}/latest_checkpointed_iteration.txt" ]]; then
@@ -119,14 +119,13 @@ mpirun -np $NUM_GPUS \
   --train-iters ${TRAIN_STEPS} \
   --tokenizer-type Llama3Tokenizer \
   --tokenizer-model ${TOKENIZER_MODEL} \
-  --begin-of-special-token-id 128002 \
-  --end-of-special-token-id 128003 \
   ${CHECKPOINT_ARGS} \
   --save ${CHECKPOINT_SAVE_DIR} \
   --data-path ${TRAIN_DATA_PATH} \
   --split 998,1,1 \
   --distributed-backend nccl \
-  --init-method-std 0.02 \
+  --no-initialization \
+  --exit-on-missing-checkpoint \
   --lr ${LR} \
   --min-lr ${MIN_LR} \
   --lr-decay-style cosine \
@@ -138,11 +137,13 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --log-interval 1 \
-  --save-interval 500 \
+  --save-interval 10 \
+  --use-dist-ckpt \
+  --dist-ckpt-format torch_dist \
+  --async-save \
   --eval-interval 500 \
   --eval-iters 10 \
   --bf16 \
-  --use-checkpoint-args \
   --untie-embeddings-and-output-weights \
   --no-position-embedding \
   --position-embedding-type rope \
@@ -165,8 +166,6 @@ mpirun -np $NUM_GPUS \
   --reset-position-ids \
   --reset-attention-mask \
   --log-throughput \
-  --log-straggler \
-  --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "Llama-3-8B-meta-tag" \
+  --wandb-project "Megatron-LM" \
   --wandb-entity "okoge"

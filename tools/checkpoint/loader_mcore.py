@@ -1,5 +1,6 @@
 # Copyright (c) 2024, NVIDIA CORPORATION. All rights reserved.
 
+from email.policy import default
 import json
 import os
 import sys
@@ -27,6 +28,9 @@ def add_arguments(parser):
     group.add_argument('--loader-transformer-impl', default='transformer_engine',
                        choices=['local', 'transformer_engine'],
                        help='Which Transformer implementation to use.')
+    group.add_argument("--use-torch-dist-ckpt", action="store_true")
+    group.add_argument("--original-tp-size", type=int, default=1)
+    group.add_argument("--original-pp-size", type=int, default=1)
 
 
 def _load_checkpoint(queue, args):
@@ -67,6 +71,27 @@ def _load_checkpoint(queue, args):
                 '--load', args.load_dir,
                 '--position-embedding-type', args.position_embedding_type,
                 ]
+
+    if args.use_torch_dist_ckpt:
+        sys.argv.append('--use-dist-ckpt')
+        sys.argv.append('--use-mcore-models')
+        sys.argv.append('--use-distributed-optimizer')
+
+        from tests.unit_tests.test_utilities import Utils
+
+        Utils.initialize_model_parallel(tensor_model_parallel_size=1, pipeline_model_parallel_size=1)
+        # import torch.distributed as torch_distributed
+        # torch_distributed.init_process_group(
+        #     backend='nccl',
+        #     world_size=args.original_tp_size * args.original_pp_size,
+        #     rank=0,
+        #     init_method='tcp://localhost:12345'
+        # )
+        # import megatron.core.parallel_state as ps
+        # ps.initialize_model_parallel(
+        #     tensor_model_parallel_size=args.original_tp_size,
+        #     pipeline_model_parallel_size=args.original_pp_size
+        # )
 
     margs = parse_args()
     margs, checkpoint_args = load_args_from_checkpoint(margs, exit_on_missing_checkpoint=True)
@@ -135,7 +160,9 @@ def _load_checkpoint(queue, args):
         pre_process = mpu.is_pipeline_first_stage()
         post_process = mpu.is_pipeline_last_stage()
         for rank in range(count):
+            print(f"Loading model {rank}", flush=True)
             mpu.set_tensor_model_parallel_rank(rank)
+            print(f"mpu.get_tensor_model_parallel_rank() = {mpu.get_tensor_model_parallel_rank()}", flush=True)
             if margs.virtual_pipeline_model_parallel_size is not None:
                 model_ = []
                 for i in range(margs.virtual_pipeline_model_parallel_size):
@@ -199,6 +226,7 @@ def _load_checkpoint(queue, args):
     vp_size = margs.virtual_pipeline_model_parallel_size
     if vp_size is None:
         vp_size = 1
+    print(f"tp_size: {tp_size}, pp_size: {pp_size}, vp_size: {vp_size}", flush=True)
 
     # Layernorm has bias; RMSNorm does not.
     if hasattr(checkpoint_args, 'normalization'):

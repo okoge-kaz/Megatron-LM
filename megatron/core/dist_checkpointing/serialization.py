@@ -16,6 +16,7 @@ from typing import Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
+import torch.distributed as torch_distributed
 
 from .core import CheckpointingConfig, maybe_load_config, save_config
 from .dict_utils import (
@@ -91,8 +92,9 @@ def load(
     """
     if common_strategy is not None:
         raise NotImplementedError('The only supported common strategy is torch')
-
+    # print(f"DEBUG: sharded_strategy 1: {sharded_strategy}", flush=True)
     sharded_strategy = _verify_checkpoint_and_load_strategy(checkpoint_dir, sharded_strategy)
+    # print(f"DEBUG: sharded_strategy 2: {sharded_strategy}", flush=True)
 
     checkpoint_dir = Path(checkpoint_dir)
     common_state_dict = load_common_state_dict(checkpoint_dir)
@@ -132,6 +134,7 @@ def load(
     if validate_access_integrity:
         validate_sharding_integrity(nested_values(sharded_state_dict))
 
+    # print(f"DEBUG: sharded_strategy 3: {sharded_strategy}, checkpoint_dir: {checkpoint_dir}", flush=True)
     loaded_state_dict = sharded_strategy.load(sharded_state_dict, checkpoint_dir)
 
     loaded_state_dict = apply_factory_merges(loaded_state_dict, sh_ten_factories)
@@ -422,6 +425,7 @@ def validate_sharding_integrity(sharded_tensors: Iterable[ShardedTensor]):
     """
     sharding = [ten.without_data() for ten in sharded_tensors]
     all_sharding = [None] * torch.distributed.get_world_size()
+    # print(f"DEBUG: {torch.distributed.get_rank()} {sharding}", flush=True)
     torch.distributed.all_gather_object(all_sharding, sharding)
     if torch.distributed.get_rank() != 0:
         return
@@ -438,6 +442,8 @@ def validate_sharding_integrity(sharded_tensors: Iterable[ShardedTensor]):
 
 
 def _validate_sharding_for_key(rank_sharding: List[Tuple[int, ShardedTensor]]):
+    # print(f"validate_sharding_for_key: {rank_sharding}", flush=True)
+    # print(f"validate_sharding_for_key: len(rank_sharding): {len(rank_sharding)}, rank_sharding[0][1]: {rank_sharding[0][1]}", flush=True)
     some_rank_shard = rank_sharding[0][1]
     global_shape = some_rank_shard.global_shape
     local_shape = some_rank_shard.local_shape
@@ -462,6 +468,7 @@ def _validate_sharding_for_key(rank_sharding: List[Tuple[int, ShardedTensor]]):
         )
 
     shard_access_cnt = _compute_shards_access(rank_sharding)
+    # print(f"DEBUG: shard_access_cnt: {shard_access_cnt}", flush=True)
     if has_flattened_range:
         map_reduce(
             rank_sharding,
@@ -471,8 +478,13 @@ def _validate_sharding_for_key(rank_sharding: List[Tuple[int, ShardedTensor]]):
         )
     else:
         if not torch.all(shard_access_cnt == 1):
-            logger.error(f'Invalid access pattern for {rank_sharding[0][1]}: {shard_access_cnt}')
-            raise CheckpointingException(f'Invalid access pattern for {rank_sharding[0][1]}')
+            # print(f"DEBUG: torch.get_world_size(): {torch_distributed.get_world_size()}", flush=True)
+            if torch_distributed.get_world_size() == 1:
+                # for checkpoint convert
+                return
+            else:
+                logger.error(f'Invalid access pattern for {rank_sharding[0][1]}: {shard_access_cnt}')
+                raise CheckpointingException(f'Invalid access pattern for {rank_sharding[0][1]}')
 
 
 def _compute_shards_access(rank_sharding):
@@ -537,6 +549,9 @@ def _validate_objects_for_key(sharded_objects: List[ShardedObject]):
         raise CheckpointingException(f'Duplicate ShardedObject keys: {list(duplicates.keys())}')
     expected_shard_num = np.prod(sharded_objects[0][1].global_shape)
     if len(unique_keys) != expected_shard_num:
+        if torch_distributed.get_world_size() == 1:
+            # for checkpoint convert
+            return
         err_msg = f'Invalid access pattern: {expected_shard_num - len(unique_keys)} ShardedObject are missing.'
         logger.error(f'{err_msg} Existing shards: {unique_keys}')
         raise CheckpointingException(err_msg)

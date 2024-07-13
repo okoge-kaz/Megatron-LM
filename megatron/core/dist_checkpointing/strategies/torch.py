@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import torch
+import torch.distributed as torch_distributed
 from torch.distributed import checkpoint
 from torch.distributed._shard.metadata import ShardMetadata
 from torch.distributed._shard.sharded_tensor import Shard, ShardedTensorMetadata, TensorProperties
@@ -372,6 +373,9 @@ class MCoreLoadPlanner(DefaultLoadPlanner):
                 raise CheckpointingException(_msg)
 
     def create_local_plan(self) -> LoadPlan:
+        if torch_distributed.get_world_size() == 1:
+            return super().create_local_plan()
+
         self._validate_global_shapes(self.metadata, self.shapes_validation_sharded_tensors)
         return super().create_local_plan()
 
