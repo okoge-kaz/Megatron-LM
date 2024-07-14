@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -l rt_AF=16
-#$ -l h_rt=5:00:00:00
+#$ -l rt_AF=4
+#$ -l h_rt=0:01:00:00
 #$ -j y
 #$ -o outputs/Llama-3-8b-meta-tag/
 #$ -cwd
@@ -129,6 +129,8 @@ mpirun -np $NUM_GPUS \
   --tokenizer-model ${TOKENIZER_MODEL} \
   --begin-of-special-token-id 128002 \
   --end-of-special-token-id 128003 \
+  --reset-position-ids \
+  --reset-attention-mask \
   ${CHECKPOINT_ARGS} \
   --save ${CHECKPOINT_SAVE_DIR} \
   --data-path ${TRAIN_DATA_PATH} \
