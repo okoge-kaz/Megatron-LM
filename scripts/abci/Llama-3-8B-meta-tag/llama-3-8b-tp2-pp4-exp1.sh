@@ -201,7 +201,6 @@ mpirun -np $NUM_GPUS \
   -x LD_LIBRARY_PATH \
   -x PATH \
   -bind-to none \
-  -x PATH \
   python pretrain_gpt.py \
   --tensor-model-parallel-size ${TENSOR_PARALLEL_SIZE} \
   --pipeline-model-parallel-size ${PIPELINE_PARALLEL_SIZE} \
@@ -241,6 +240,8 @@ mpirun -np $NUM_GPUS \
   --adam-beta2 0.95 \
   --log-interval 1 \
   --save-interval 500 \
+  --no-initialization \
+  --exit-on-missing-checkpoint \
   --eval-interval 500 \
   --eval-iters 10 \
   --bf16 \
