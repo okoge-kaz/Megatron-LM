@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -l rt_AF=16
-#$ -l h_rt=4:00:00:00
+#$ -l rt_AF=4
+#$ -l h_rt=5:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3-8b-ablation/
 #$ -cwd
@@ -134,7 +134,6 @@ mpirun -np $NUM_GPUS \
   -x LD_LIBRARY_PATH \
   -x PATH \
   -bind-to none \
-  -x PATH \
   python pretrain_gpt.py \
   --tensor-model-parallel-size ${TENSOR_PARALLEL_SIZE} \
   --pipeline-model-parallel-size ${PIPELINE_PARALLEL_SIZE} \
@@ -175,6 +174,8 @@ mpirun -np $NUM_GPUS \
   --eval-interval 500 \
   --eval-iters 10 \
   --bf16 \
+  --no-initialization \
+  --exit-on-missing-checkpoint \
   --use-checkpoint-args \
   --untie-embeddings-and-output-weights \
   --no-position-embedding \
