@@ -133,7 +133,6 @@ mpirun -np $NUM_GPUS \
   --data-path ${TRAIN_DATA_PATH} \
   --split 998,1,1 \
   --distributed-backend nccl \
-  --init-method-std 0.02 \
   --lr ${LR} \
   --min-lr ${MIN_LR} \
   --lr-decay-style cosine \
