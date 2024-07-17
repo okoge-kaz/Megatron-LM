@@ -222,6 +222,8 @@ mpirun -np $NUM_GPUS \
   --tokenizer-model ${TOKENIZER_MODEL} \
   --begin-of-special-token-id 128002 \
   --end-of-special-token-id 128003 \
+  --reset-position-ids \
+  --reset-attention-mask \
   ${CHECKPOINT_ARGS} \
   --save ${CHECKPOINT_SAVE_DIR} \
   --data-path ${TRAIN_DATA_PATH} \
