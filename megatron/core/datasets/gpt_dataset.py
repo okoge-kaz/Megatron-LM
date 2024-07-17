@@ -219,10 +219,7 @@ class GPTDataset(MegatronDataset):
             # torch.set_printoptions(edgeitems=100, linewidth=1000)
 
             if len(start_indices) == len(end_indices) and len(start_indices) == 0:
-                logger.log(
-                    level=logging.WARNING,
-                    msg="len(start_indices)==len(end_indices) and len(start_indices)==0"
-                )
+                pass
             elif len(start_indices) == len(end_indices):
                 # case1: S-E, S-E
                 # case2: E, S-E, S
