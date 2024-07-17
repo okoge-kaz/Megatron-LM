@@ -22,7 +22,7 @@ source .env/bin/activate
 TENSOR_PARALLEL_SIZE=2
 PIPELINE_PARALLEL_SIZE=4
 
-ITERATION=7500
+ITERATION=10000
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
 # model config
@@ -30,6 +30,8 @@ MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b-meta-tag/ex
 HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b-meta-tag/exp1/tp2-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
 mkdir -p ${HF_CHECKPOINT_DIR}
+
+CURRENT_ITERATION=$(cat "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt")
 
 echo $ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
 
@@ -47,3 +49,6 @@ python tools/checkpoint/convert.py \
   --save-dtype bfloat16 \
   --loader-transformer-impl transformer_engine \
   --megatron-path /bb/llm/gaf51275/2024/Megatron-LM-latest
+
+# change checkpoint iteration
+echo $CURRENT_ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"

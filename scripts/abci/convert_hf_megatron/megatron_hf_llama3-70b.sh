@@ -31,6 +31,8 @@ HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-70b/e
 
 mkdir -p ${HF_CHECKPOINT_DIR}
 
+CURRENT_ITERATION=$(cat "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt")
+
 echo $ITERATION >"${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
 
 # tokenizer config
@@ -47,3 +49,6 @@ python tools/checkpoint/convert.py \
   --save-dtype bfloat16 \
   --loader-transformer-impl transformer_engine \
   --megatron-path /bb/llm/gaf51275/2024/Megatron-LM
+
+# change checkpoint iteration
+echo $CURRENT_ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
