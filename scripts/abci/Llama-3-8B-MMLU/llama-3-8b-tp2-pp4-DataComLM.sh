@@ -90,16 +90,16 @@ TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 20951747395 /bb/llm/gaf51275/datasets/Meta-L
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1691211578 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/ja_wiki_merged_text_document"
 
 # datacom lm
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5012507174 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/global-shard_01_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5016699629 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/global-shard_02_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4847457130 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/global-shard_03_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5020588018 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/global-shard_04_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5023343032 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/global-shard_05_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5016072874 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/global-shard_06_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5022229993 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/global-shard_07_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5019972166 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/global-shard_08_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5011710894 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/global-shard_09_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5009419089 /groups/gag51395/datasets/binarized/Meta-Llama-3_original_transformers-4.40.1/global-shard_10_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5012507174 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_01_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5016699629 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_02_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4847457130 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_03_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5020588018 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_04_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5023343032 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_05_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5016072874 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_06_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5022229993 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_07_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5019972166 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_08_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5011710894 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_09_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5009419089 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_10_of_10_text_document"
 
 # job name
 JOB_NAME="Llama-3-8b-datacom-lm-ABCI-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
