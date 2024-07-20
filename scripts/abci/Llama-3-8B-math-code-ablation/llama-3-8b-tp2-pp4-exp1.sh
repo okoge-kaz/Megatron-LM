@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=2
-#$ -l h_rt=3:00:00:00
+#$ -l h_rt=5:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3-8b-math-code/
 #$ -cwd
