@@ -2,8 +2,8 @@
 
 set -e
 
-start=7500
-end=7500
+start=10000
+end=12500
 increment=2500
 
 EXPERIMENT_NAME=datacom-lm
