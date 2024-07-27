@@ -2,11 +2,11 @@
 
 set -e
 
-start=10000
-end=12500
+start=7500
+end=10000
 increment=2500
 
-EXPERIMENT_NAME=datacom-lm
+EXPERIMENT_NAME=fineweb-edu
 
 upload_base_dir=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b/${EXPERIMENT_NAME}/tp2-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1
 
