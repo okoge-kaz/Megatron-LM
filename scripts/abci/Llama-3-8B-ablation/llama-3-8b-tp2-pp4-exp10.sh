@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l rt_AF=4
+#$ -l rt_AF=16
 #$ -l h_rt=5:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3-8b-ablation/
@@ -170,7 +170,7 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --log-interval 1 \
-  --save-interval 250 \
+  --save-interval 100 \
   --eval-interval 500 \
   --eval-iters 10 \
   --bf16 \

@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l rt_AF=4
+#$ -l rt_AF=16
 #$ -l h_rt=5:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3-8b-meta-tag/
@@ -241,7 +241,7 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --log-interval 1 \
-  --save-interval 500 \
+  --save-interval 100 \
   --no-initialization \
   --exit-on-missing-checkpoint \
   --eval-interval 500 \
