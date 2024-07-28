@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=1
-#$ -l h_rt=5:00:00
+#$ -l h_rt=10:00:00
 #$ -o outputs/convert/megatron_hf/$JOB_ID
 #$ -e outputs/convert/megatron_hf/$JOB_ID
 #$ -p -5
@@ -22,12 +22,12 @@ source .env/bin/activate
 TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=8
 
-ITERATION=2000
+ITERATION=5000
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/gs/bs/tgh-NII-LLM/checkpoints/Llama-3-70B/swallow-exp2/tp4-pp8-ct1-LR1.0E-5-MINLR1.0E-6-WD0.1
-HF_CHECKPOINT_DIR=/gs/bs/tgh-NII-LLM/checkpoints/megatron-to-hf/Llama-3-70b-hf/exp2/LR1.0E-5-MINLR1.0E-6-WD0.1/iter_${FORMATTED_ITERATION}
+MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/Llama-3-70B/exp6-fp8/tp4-pp8-ct1-LR1.0E-5-MINLR1.0E-6-WD0.1
+HF_CHECKPOINT_DIR=/gs/bs/tgh-NII-LLM/checkpoints/megatron-to-hf/Llama-3-70b-hf/exp6-fp8/LR1.0E-5-MINLR1.0E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
 mkdir -p ${HF_CHECKPOINT_DIR}
 
