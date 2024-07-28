@@ -4,7 +4,7 @@ set -e
 
 start=1000
 end=12500
-increment=1000
+increment=500
 
 EXPERIMENT_NAME=exp6
 
