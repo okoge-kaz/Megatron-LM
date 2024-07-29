@@ -18,7 +18,7 @@ module load gcc/11.4.0
 # swich virtual env
 source .env/bin/activate
 
-ITERATION=5000
+ITERATION=12000
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
 # model config
