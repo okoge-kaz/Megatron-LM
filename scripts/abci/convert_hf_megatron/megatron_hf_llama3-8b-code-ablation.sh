@@ -18,14 +18,14 @@ module load gcc/11.4.0
 # swich virtual env
 source .env/bin/activate
 
-ITERATION=2500
+ITERATION=9250
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
-EXPERIMENT_NAME=exp3
+EXPERIMENT_NAME=exp4
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/math-code-exp${EXPERIMENT_NAME}/tp2-pp4-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
-HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b-code-ablation/exp${EXPERIMENT_NAME}/tp4-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/math-code-${EXPERIMENT_NAME}/tp2-pp4-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b-code-ablation/${EXPERIMENT_NAME}/tp4-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
 mkdir -p ${HF_CHECKPOINT_DIR}
 
