@@ -2,7 +2,7 @@
 
 set -e
 
-start=1000
+start=12500
 end=12500
 increment=500
 
