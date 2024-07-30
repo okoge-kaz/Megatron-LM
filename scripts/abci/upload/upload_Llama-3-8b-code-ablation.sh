@@ -2,11 +2,11 @@
 
 set -e
 
-start=7500
-end=10000
+start=7000
+end=7000
 increment=2500
 
-EXPERIMENT_NAME=exp3
+EXPERIMENT_NAME=exp2
 
 upload_base_dir=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b-code-ablation/${EXPERIMENT_NAME}/tp4-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1
 
