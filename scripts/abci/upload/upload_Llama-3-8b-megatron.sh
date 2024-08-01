@@ -3,12 +3,12 @@
 set -e
 
 start=500
-end=7000
+end=12500
 increment=500
 
-EXPERIMENT_NAME=exp2
+EXPERIMENT_NAME=datacom-lm
 
-upload_base_dir=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/math-code-${EXPERIMENT_NAME}/tp4-pp4-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+upload_base_dir=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/${EXPERIMENT_NAME}/tp2-pp4-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
 
 upload_checkpoint() {
   local upload_dir=$1
@@ -35,7 +35,7 @@ upload_checkpoint() {
 
 for ((i = start; i <= end; i += increment)); do
   upload_dir=$upload_base_dir/iter_$(printf "%07d" $i)
-  repo_name="RioYokotaLab/Llama-3-8b-code-abation-${EXPERIMENT_NAME}-LR2.5e-5-MINLR2.5E-6-WD0.1-iter$(printf "%07d" $i)"
+  repo_name="RioYokotaLab/Llama-3-8b-ablation-${EXPERIMENT_NAME}-LR2.5e-5-MINLR2.5E-6-WD0.1-iter$(printf "%07d" $i)"
 
   if ! upload_checkpoint "$upload_dir" "$repo_name"; then
     echo "Skipping to next checkpoint after repeated failures for $repo_name"
