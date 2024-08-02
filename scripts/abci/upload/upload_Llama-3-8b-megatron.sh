@@ -6,7 +6,7 @@ start=500
 end=12500
 increment=500
 
-EXPERIMENT_NAME=datacom-lm
+EXPERIMENT_NAME=jstage
 
 upload_base_dir=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/${EXPERIMENT_NAME}/tp2-pp4-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
 
