@@ -237,7 +237,7 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --log-interval 1 \
-  --save-interval 500 \
+  --save-interval 250 \
   --no-initialization \
   --exit-on-missing-checkpoint \
   --eval-interval 500 \
