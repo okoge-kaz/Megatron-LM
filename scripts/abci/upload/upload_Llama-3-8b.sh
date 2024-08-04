@@ -2,8 +2,8 @@
 
 set -e
 
-start=2500
-end=2500
+start=7500
+end=10000
 increment=2500
 
 EXPERIMENT_NAME=exp1+wiki
