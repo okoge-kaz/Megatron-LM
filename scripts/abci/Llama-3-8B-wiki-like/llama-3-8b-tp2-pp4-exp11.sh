@@ -292,6 +292,9 @@ mpirun -np $NUM_GPUS \
   -x MASTER_ADDR=$MASTER_ADDR \
   -x MASTER_PORT=$MASTER_PORT \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
+  -x TORCH_NCCL_ASYNC_ERROR_HANDLING=1 \
+  -x NCCL_IB_GID_INDEX=3 \
+  -x NCCL_DEBUG=INFO \
   -x LD_LIBRARY_PATH \
   -x PATH \
   -bind-to none \
@@ -332,7 +335,7 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --log-interval 1 \
-  --save-interval 500 \
+  --save-interval 250 \
   --no-initialization \
   --exit-on-missing-checkpoint \
   --eval-interval 500 \
