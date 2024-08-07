@@ -2,8 +2,8 @@
 #$ -cwd
 #$ -l node_f=1
 #$ -l h_rt=10:00:00
-#$ -o outputs/convert/megatron_hf/$JOB_ID
-#$ -e outputs/convert/megatron_hf/$JOB_ID
+#$ -o outputs/convert/megatron_hf/$JOB_ID.log
+#$ -e outputs/convert/megatron_hf/$JOB_ID.log
 #$ -p -5
 
 # Load modules
@@ -22,7 +22,7 @@ source .env/bin/activate
 TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=8
 
-ITERATION=10000
+ITERATION=8000
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
 # model config
