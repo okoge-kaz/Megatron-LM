@@ -10,9 +10,9 @@ set -e
 
 source .env/bin/activate
 
-start=10000
-end=10000
-increment=500
+start=7000
+end=8000
+increment=1000
 
 base_dirs=(
   "/gs/bs/tgh-NII-LLM/checkpoints/megatron-to-hf/Llama-3-70b-hf/exp6-fp8/LR1.0E-5-MINLR1.0E-6-WD0.1"
