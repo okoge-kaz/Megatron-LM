@@ -1,9 +1,9 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=16
-#$ -l h_rt=41:30:00
-#$ -o outputs/Llama-3-70b/$JOB_ID.log
-#$ -e outputs/Llama-3-70b/$JOB_ID.log
+#$ -l h_rt=24:00:00
+#$ -o outputs/Llama-3-8b/$JOB_ID.log
+#$ -e outputs/Llama-3-8b/$JOB_ID.log
 #$ -p -5
 
 # Load modules
@@ -39,36 +39,36 @@ while read -r hostname _ rest; do
 done <"$PE_HOSTFILE" >"$HOSTFILE_NAME"
 
 # model config
-# llama-3-70b: https://huggingface.co/meta-llama/Meta-Llama-3-70B/blob/main/config.json
-HIDDEN_SIZE=8192
-FFN_HIDDEN_SIZE=28672 # intermediate size (HuggingFace)
-NUM_LAYERS=80
-NUM_HEADS=64
+# llama-3-8b: https://huggingface.co/meta-llama/Meta-Llama-3-8B/blob/main/config.json
+HIDDEN_SIZE=4096
+FFN_HIDDEN_SIZE=14336 # intermediate size (HuggingFace)
+NUM_LAYERS=32
+NUM_HEADS=32
 NUM_KEY_VALUE_HEADS=8
 SEQ_LENGTH=8192
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=4 # fixed (tsubame has 4 GPUs per node)
-PIPELINE_PARALLEL_SIZE=8
+TENSOR_PARALLEL_SIZE=2   # fixed
+PIPELINE_PARALLEL_SIZE=2 # num layers 32: Llama-2 8B
 CONTEXT_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
 # training config
-MICRO_BATCH_SIZE=1
+MICRO_BATCH_SIZE=2
 GLOBAL_BATCH_SIZE=1024
 TRAIN_STEPS=12500
 LR_DECAY_ITERS=12500
 
-LR=1.0E-5
-MIN_LR=1.0E-6
+LR=2.5E-5
+MIN_LR=2.5E-6
 LR_WARMUP_STEPS=1000
 WEIGHT_DECAY=0.1
 GRAD_CLIP=1
 
 # model config
-TOKENIZER_MODEL=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3-70B/tokenizer.json
-CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/gs/bs/tga-NII-LLM/Llama-3-70B/exp6-fp8/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}-LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
+TOKENIZER_MODEL=/gs/bs/tga-bayes-crest/fujii/hf-checkpoints/Meta-Llama-3-8B/tokenizer.json
+CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+CHECKPOINT_SAVE_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3-8b/exp6-fp8-hybrid/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}-LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}-WARMUP${LR_WARMUP_STEPS}
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
@@ -109,7 +109,7 @@ TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 3718158072 /gs/fs/tga-NII-LLM/datasets/Meta-
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 3718158072 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/proof-pile-2-train_merged_open-web-math_text_document"
 
 # job name
-JOB_NAME="Llama-3-70b-fp8-hybrid-exp6-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
+JOB_NAME="Llama-3-8b-T4-exp6-fp8-hybrid-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
 
 # checkpoint load
 if [[ -f "${CHECKPOINT_SAVE_DIR}/latest_checkpointed_iteration.txt" ]]; then
@@ -148,7 +148,6 @@ mpirun -np $NUM_GPUS \
   --micro-batch-size ${MICRO_BATCH_SIZE} \
   --global-batch-size ${GLOBAL_BATCH_SIZE} \
   --train-iters ${TRAIN_STEPS} \
-  --no-initialization \
   --tokenizer-type Llama3Tokenizer \
   --tokenizer-model ${TOKENIZER_MODEL} \
   ${CHECKPOINT_ARGS} \
@@ -168,7 +167,7 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --log-interval 1 \
-  --save-interval 250 \
+  --save-interval 500 \
   --eval-interval 500 \
   --eval-iters 10 \
   --bf16 \
@@ -194,6 +193,8 @@ mpirun -np $NUM_GPUS \
   --use-mpi \
   --use-z-loss \
   --log-throughput \
+  --log-straggler \
+  --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "Llama-3-70B" \
+  --wandb-project "Llama-3-8B" \
   --wandb-entity "prj-jalm"
