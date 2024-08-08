@@ -2,8 +2,8 @@
 
 set -e
 
-start=5000
-end=5000
+start=7500
+end=12500
 increment=2500
 
 EXPERIMENT_NAME=refinedweb
