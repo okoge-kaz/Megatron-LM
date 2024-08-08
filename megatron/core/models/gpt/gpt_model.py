@@ -53,7 +53,8 @@ class GPTModel(LanguageModule):
         rotary_percent: float = 1.0,
         rotary_base: int = 10000,
         seq_len_interpolation_factor: Optional[float] = None,
-        use_embedding_scaling=False,
+        use_embedding_scaling: Optional[bool] = False,
+        rope_scaling: Optional[dict] = None,
     ) -> None:
         super().__init__(config=config)
 
@@ -91,6 +92,7 @@ class GPTModel(LanguageModule):
                 rotary_interleaved=self.config.rotary_interleaved,
                 seq_len_interpolation_factor=seq_len_interpolation_factor,
                 rotary_base=rotary_base,
+                rope_scaling=rope_scaling,
             )
 
         # Transformer.
