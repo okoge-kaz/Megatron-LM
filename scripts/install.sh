@@ -32,12 +32,12 @@ pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation -
 
 # transformer engine
 # A100 1枚だと CPU memory 不足でエラーになる
-pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.6
+pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.7
 
 # flash-attention install
 git clone git@github.com:Dao-AILab/flash-attention.git
 cd flash-attention
-git checkout v2.4.2
+git checkout v2.5.8
 pip install -e .
 
 # huggingface install
