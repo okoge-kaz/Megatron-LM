@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l rt_AF=16
+#$ -l rt_AF=32
 #$ -l h_rt=5:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3.1-8b-mmlu/
@@ -55,6 +55,9 @@ PIPELINE_PARALLEL_SIZE=4 # num layers 32: Llama-2 8B
 CONTEXT_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
+PIPLINE_MODEL_CHUNKS=1
+LAYERS_PER_VIRTUAL_PIPELINE_STAGE=$((${NUM_LAYERS} / ${PIPELINE_PARALLEL_SIZE} / ${PIPLINE_MODEL_CHUNKS}))
+
 # training config
 MICRO_BATCH_SIZE=1
 GLOBAL_BATCH_SIZE=1024
@@ -70,7 +73,7 @@ GRAD_CLIP=1
 # model config
 TOKENIZER_MODEL=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B/tokenizer.json
 CHECKPOINT_DIR=/bb/llm/gaf51275/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b/datacom-lm/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
+CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b/datacom-lm/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}-tflops
 
 echo ${CHECKPOINT_SAVE_DIR}
 
@@ -113,6 +116,25 @@ else
   CHECKPOINT_ARGS="--load ${CHECKPOINT_DIR} --no-load-rng --no-load-optim"
 fi
 
+# interleaved pipeline
+PIPELINE_ARGS="--pipeline-model-parallel-size ${PIPELINE_PARALLEL_SIZE}"
+
+if [[ ${PIPLINE_MODEL_CHUNKS} -gt 1 ]]; then
+  echo "Interleaved pipeline is enabled: layers per virtual pipeline stage = ${LAYERS_PER_VIRTUAL_PIPELINE_STAGE}"
+
+  PIPELINE_ARGS="${PIPELINE_ARGS} --num-layers-per-virtual-pipeline-stage ${LAYERS_PER_VIRTUAL_PIPELINE_STAGE}"
+fi
+
+# timer (profiling)
+LOG_TIMER=False
+
+TIMER_ARGS="--log-throughput"
+
+if [[ ${LOG_TIMER} == "True" ]]; then
+  TIMER_ARGS="${TIMER_ARGS} --log-timers-to-tensorboard"
+  TIMER_ARGS="${TIMER_ARGS} --timing-log-level 2"
+fi
+
 # run
 mpirun -np $NUM_GPUS \
   --npernode $NUM_GPU_PER_NODE \
@@ -125,10 +147,12 @@ mpirun -np $NUM_GPUS \
   -bind-to none \
   python pretrain_gpt.py \
   --tensor-model-parallel-size ${TENSOR_PARALLEL_SIZE} \
-  --pipeline-model-parallel-size ${PIPELINE_PARALLEL_SIZE} \
+  ${PIPELINE_ARGS} \
   --context-parallel-size ${CONTEXT_PARALLEL_SIZE} \
   --sequence-parallel \
   --use-distributed-optimizer \
+  --overlap-grad-reduce \
+  --overlap-param-gather \
   --num-layers ${NUM_LAYERS} \
   --hidden-size ${HIDDEN_SIZE} \
   --ffn-hidden-size ${FFN_HIDDEN_SIZE} \
@@ -189,12 +213,13 @@ mpirun -np $NUM_GPUS \
   --recompute-activations \
   --recompute-granularity "selective" \
   --attention-softmax-in-fp32 \
+  --accumulate-allreduce-grads-in-fp32 \
   --transformer-impl "transformer_engine" \
   --use-mpi \
   --use-z-loss \
-  --log-throughput \
+  ${TIMER_ARGS} \
   --log-straggler \
   --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "Llama-3.1-8B" \
+  --wandb-project "Llama-3.1-8B-TFLOPS" \
   --wandb-entity "prj-jalm"
