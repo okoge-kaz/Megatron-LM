@@ -22,12 +22,14 @@ source .env/bin/activate
 TENSOR_PARALLEL_SIZE=2
 PIPELINE_PARALLEL_SIZE=4
 
-ITERATION=1
+ITERATION=2500
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
+EXPERIMENT=datacom-lm
+
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b/checkpoint-convert-test/iter_${FORMATTED_ITERATION}
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b/${EXPERIMENT}/tp2-pp4-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b/${EXPERIMENT}/tp2-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
 mkdir -p ${HF_CHECKPOINT_DIR}
 
