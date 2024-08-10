@@ -1,6 +1,6 @@
 #!/bin/bash
 #!/bin/bash
-#$ -l rt_AG.small=1
+#$ -l rt_AF=1
 #$ -l h_rt=03:30:00
 #$ -j y
 #$ -o outputs/inference/
@@ -8,23 +8,16 @@
 
 # module load
 source /etc/profile.d/modules.sh
-module load cuda/11.8/11.8.0
-module load cudnn/8.9/8.9.2
-module load nccl/2.16/2.16.2-1
-module load hpcx/2.12
+module use /bb/llm/gaf51275/modules/modulefiles
 
-# swich virtual env
-cd /bb/llm/gaf51275/llama/Megatron-LM
+module load cuda/12.1/12.1.1
+module load cudnn/cuda-12.1/9.0.0
+module load nccl/2.20.5
+module load hpcx/2.12
+module load gcc/11.4.0
+
 source .env/bin/activate
 
-### YOUR HUGGINGFACE TOKEN ###
-export HF_TOKEN=""
-export HF_HOME=/bb/llm/gaf51275/.cache/huggingface
-
 # inference
-
-HF_MODEL=/bb/llm/gaf51275/llama/huggingface-checkpoint/Llama-2-7b-chat-megatron
 python scripts/abci/inference/inference.py \
-  --hf-model-path $HF_MODEL \
-  --hf-tokenizer-path /bb/llm/gaf51275/llama/huggingface-checkpoint/Llama-2-7b-chat-hf/tokenizer.model \
-  --hf-cache-dir $HF_HOME
+  --hf-model-path "/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b/datacom-lm/tp2-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_0002500"
