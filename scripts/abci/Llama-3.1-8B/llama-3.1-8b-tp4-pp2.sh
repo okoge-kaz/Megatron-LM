@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=32
-#$ -l h_rt=4:13:00:00
+#$ -l h_rt=4:12:00:00
 #$ -j y
 #$ -o outputs/Llama-3.1-8b/
 #$ -cwd
@@ -11,9 +11,10 @@ module use /bb/llm/gaf51275/modules/modulefiles
 
 module load cuda/12.1/12.1.1
 module load cudnn/cuda-12.1/9.0.0
-module load nccl/2.20.5
+module load nccl/2.17/2.17.1-1
 module load hpcx/2.12
 module load gcc/11.4.0
+module load nccl-rdma-sharp-plugins/v2.5.x-4ccb98a
 
 set -e
 
@@ -59,10 +60,10 @@ PIPLINE_MODEL_CHUNKS=1
 LAYERS_PER_VIRTUAL_PIPELINE_STAGE=$((${NUM_LAYERS} / ${PIPELINE_PARALLEL_SIZE} / ${PIPLINE_MODEL_CHUNKS}))
 
 # training config
-MICRO_BATCH_SIZE=2
+MICRO_BATCH_SIZE=1
 GLOBAL_BATCH_SIZE=1024
-TRAIN_STEPS=25000
-LR_DECAY_ITERS=25000
+TRAIN_STEPS=27500
+LR_DECAY_ITERS=27500
 
 LR=2.5E-5
 MIN_LR=2.5E-6
@@ -347,8 +348,12 @@ mpirun -np $NUM_GPUS \
   -x MASTER_ADDR=$MASTER_ADDR \
   -x MASTER_PORT=$MASTER_PORT \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
-  -x NCCL_DEBUG=INFO \
   -x LD_LIBRARY_PATH \
+  -x NCCL_DEBUG=INFO \
+  -x NCCL_COLLNET_ENABLE=1 \
+  -x SHARP_COLL_LOCK_ON_COMM_INIT=1 \
+  -x SHARP_COLL_NUM_COLL_GROUP_RESOURCE_ALLOC_THRESHOLD=0 \
+  -x SHARP_COLL_LOG_LEVEL=3 \
   -x PATH \
   -bind-to none \
   python pretrain_gpt.py \
