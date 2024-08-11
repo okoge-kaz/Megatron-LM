@@ -25,11 +25,11 @@ PIPELINE_PARALLEL_SIZE=4
 ITERATION=12500
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
-EXPERIMENT=refinedweb
+EXPERIMENT=exp11
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/${EXPERIMENT}/tp2-pp4-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
-HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b/${EXPERIMENT}/tp2-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/wiki-like/${EXPERIMENT}/tp2-pp4-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b/wiki-like-${EXPERIMENT}/tp2-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
 mkdir -p ${HF_CHECKPOINT_DIR}
 

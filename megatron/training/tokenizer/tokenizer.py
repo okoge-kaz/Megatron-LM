@@ -48,6 +48,14 @@ def build_tokenizer(args):
         tokenizer = create_mistral_tokenizer(args.tokenizer_model)
     elif args.tokenizer_type == 'Llama3Tokenizer':
         assert args.tokenizer_model is not None
+
+        if args.begin_of_special_token_id or args.end_of_special_token_id:
+            # reset check
+            if args.reset_position_ids or args.reset_attention_mask:
+                pass
+            else:
+                raise ValueError("special token requires calculating loss mask every time.")
+
         tokenizer = _Llama3Tokenizer(
             model_file=args.tokenizer_model,
             vocab_extra_ids=0,

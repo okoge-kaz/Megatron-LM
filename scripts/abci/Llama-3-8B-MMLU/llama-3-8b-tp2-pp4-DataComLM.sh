@@ -1,8 +1,8 @@
 #!/bin/bash
 #$ -l rt_AF=16
-#$ -l h_rt=10:00:00:00
+#$ -l h_rt=5:00:00:00
 #$ -j y
-#$ -o outputs/Llama-3-8b-ablation/
+#$ -o outputs/Llama-3-8b-mmlu/
 #$ -cwd
 
 # Load modules
@@ -70,7 +70,7 @@ GRAD_CLIP=1
 # model config
 TOKENIZER_MODEL=/groups/gag51395/hf-checkpoints/Meta-Llama-3-8B/tokenizer.json
 CHECKPOINT_DIR=/groups/gag51395/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/exp7/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
+CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/datacom-lm/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
 
 echo ${CHECKPOINT_SAVE_DIR}
 
@@ -80,40 +80,29 @@ mkdir -p ${CHECKPOINT_SAVE_DIR}
 TRAIN_DATA_PATH=""
 
 # ja swallow
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 9679346409 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/split_0_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 9584155928 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/split_1_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 11431522821 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/split_2_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 15073924105 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/split_3_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 35052747941 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/split_4_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5785544154 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/split_0_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5728646848 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/split_1_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 6832855983 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/split_2_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 9009994042 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/split_3_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 20951747395 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/split_4_text_document"
 
 # ja wiki
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1691211578 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/ja_wiki_merged_text_document"
 
-# en parallel corpus
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 882674099 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/default_plain_text_format_text_document"
-
-# en wiki
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 2051715275 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/en_wiki_merged_train_text_document"
-
-# en refinedweb
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 2051715275 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/lumi_en_falcon_merge_text_document"
-
-# en cosmopedia
-# TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1263578064.0 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_automathtext_train_text_document"
-# TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 19942247.0 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_khanacademy_train_text_document"
-# TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 94699565.0 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_openstax_train_text_document"
-# TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 912258371.0 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_stanford_train_text_document"
-# TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 2617815328.0 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_stories_train_text_document"
-# TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 156376851.0 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_wikihow_train_text_document"
-
-# code algebraic
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 3718158072 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/algebraic-stack_text_document"
-
-# math open-web-math
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 3718158072 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/proof-pile-2-train_merged_open-web-math_text_document"
+# datacom lm
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5012507174 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_01_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5016699629 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_02_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4847457130 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_03_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5020588018 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_04_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5023343032 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_05_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5016072874 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_06_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5022229993 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_07_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5019972166 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_08_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5011710894 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_09_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5009419089 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_10_of_10_text_document"
 
 # job name
-JOB_NAME="Llama-3-8b-exp7-ABCI-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
+JOB_NAME="Llama-3-8b-datacom-lm-ABCI-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
 
 # checkpoint load
 if [[ -f "${CHECKPOINT_SAVE_DIR}/latest_checkpointed_iteration.txt" ]]; then
@@ -134,7 +123,6 @@ mpirun -np $NUM_GPUS \
   -x LD_LIBRARY_PATH \
   -x PATH \
   -bind-to none \
-  -x PATH \
   python pretrain_gpt.py \
   --tensor-model-parallel-size ${TENSOR_PARALLEL_SIZE} \
   --pipeline-model-parallel-size ${PIPELINE_PARALLEL_SIZE} \
@@ -154,12 +142,13 @@ mpirun -np $NUM_GPUS \
   --train-iters ${TRAIN_STEPS} \
   --tokenizer-type Llama3Tokenizer \
   --tokenizer-model ${TOKENIZER_MODEL} \
+  --reset-position-ids \
+  --reset-attention-mask \
   ${CHECKPOINT_ARGS} \
   --save ${CHECKPOINT_SAVE_DIR} \
   --data-path ${TRAIN_DATA_PATH} \
   --split 998,1,1 \
   --distributed-backend nccl \
-  --init-method-std 0.02 \
   --lr ${LR} \
   --min-lr ${MIN_LR} \
   --lr-decay-style cosine \
@@ -172,9 +161,13 @@ mpirun -np $NUM_GPUS \
   --adam-beta2 0.95 \
   --log-interval 1 \
   --save-interval 500 \
+  --no-initialization \
+  --exit-on-missing-checkpoint \
   --eval-interval 500 \
   --eval-iters 10 \
   --bf16 \
+  --no-initialization \
+  --exit-on-missing-checkpoint \
   --use-checkpoint-args \
   --untie-embeddings-and-output-weights \
   --no-position-embedding \

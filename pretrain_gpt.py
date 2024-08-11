@@ -82,6 +82,12 @@ def model_provider(pre_process=True, post_process=True) -> Union[GPTModel, megat
             rotary_percent=args.rotary_percent,
             rotary_base=args.rope_theta,
             use_embedding_scaling=args.use_embedding_scaling,
+            rope_scaling={
+                "factor": args.rope_factor,
+                "low_freq_factor": args.rope_low_freq_factor,
+                "high_freq_factor": args.rope_high_freq_factor,
+                "original_max_positional_embeddings": args.rope_original_max_positional_embeddings,
+            } if args.rope_factor is not None else None
         )
     else:
         assert (

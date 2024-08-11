@@ -18,18 +18,14 @@ module load gcc/11.4.0
 # swich virtual env
 source .env/bin/activate
 
-# distributed settings
-TENSOR_PARALLEL_SIZE=2
-PIPELINE_PARALLEL_SIZE=4
-
-ITERATION=12500
+ITERATION=9250
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
-EXPERIMENT=refinedweb
+EXPERIMENT_NAME=exp4
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/${EXPERIMENT}/tp2-pp4-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
-HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b/${EXPERIMENT}/tp2-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/math-code-${EXPERIMENT_NAME}/tp2-pp4-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b-code-ablation/${EXPERIMENT_NAME}/tp4-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
 mkdir -p ${HF_CHECKPOINT_DIR}
 
@@ -38,7 +34,7 @@ CURRENT_ITERATION=$(cat "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteratio
 echo $ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
 
 # tokenizer config
-TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3-70B
+TOKENIZER_MODEL_DIR=/groups/gag51395/hf-checkpoints/Meta-Llama-3-8B
 
 # convert
 python tools/checkpoint/convert.py \

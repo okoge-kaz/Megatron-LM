@@ -3,7 +3,8 @@
     "margs",
     "OMPI",
     "TFLOP",
-    "TSUBAME"
+    "TSUBAME",
+    "wavelen"
   ],
   "files.watcherExclude": {
     "**/.git/objects/**": true,

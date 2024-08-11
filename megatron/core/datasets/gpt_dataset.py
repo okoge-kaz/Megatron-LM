@@ -202,21 +202,86 @@ class GPTDataset(MegatronDataset):
         labels[labels == self._pad_token_id] = 0
 
         # special tokens
-        if (self.config.tokenizer.bo_sp_id is not None and self.config.tokenizer.eo_sp_id is not None):  # type: ignore
+        def has_special_token_ids(tokenizer) -> bool:
+            return (
+                hasattr(tokenizer, 'bo_sp_id') and tokenizer.bo_sp_id is not None
+                and hasattr(tokenizer, 'eo_sp_id') and tokenizer.eo_sp_id is not None
+            )
+
+        if has_special_token_ids(self.config.tokenizer):
             bo_sp_token = self.config.tokenizer.bo_sp_id  # beginning of special token  # type: ignore
             eo_sp_token = self.config.tokenizer.eo_sp_id  # end of special token  # type: ignore
 
             # mask between bo_sp_token and eo_sp_token
-            start_indices = (tokens == bo_sp_token).nonzero(as_tuple=True)[0]
-            end_indices = (tokens == eo_sp_token).nonzero(as_tuple=True)[0]
+            start_indices = torch.where(tokens == bo_sp_token)[0]
+            end_indices = torch.where(tokens == eo_sp_token)[0]
 
             # torch.set_printoptions(edgeitems=100, linewidth=1000)
-            if len(start_indices) == len(end_indices):
-                for start, end in zip(start_indices, end_indices):
+
+            if len(start_indices) == len(end_indices) and len(start_indices) == 0:
+                pass
+            elif len(start_indices) == len(end_indices):
+                # case1: S-E, S-E
+                # case2: E, S-E, S
+                if start_indices[0] < end_indices[0]:  # case1
+                    for start, end in zip(start_indices, end_indices):
+                        if start < end:
+                            # mask between bo_sp_token and eo_sp_token
+                            loss_mask[start: end + 1] = 0.0  # type: ignore
+                        else:
+                            logger.log(
+                                level=logging.WARNING,
+                                msg=f"len(start_indices)==len(end_indices): case1: start={start} >= end={end}"
+                            )
+                elif start_indices[0] == end_indices[0]:
+                    raise ValueError(f"start indices[0] == end_indices[0]: value={start_indices[0]}")
+                else:  # case2
+                    first_eo_sp_token_idx = end_indices[0]
+                    end_bo_sp_token_idx = start_indices[-1]
+                    # mask
+                    loss_mask[: first_eo_sp_token_idx + 1] = 0.0  # type: ignore
+                    loss_mask[end_bo_sp_token_idx:] = 0.0  # type: ignore
+
+                    for start, end in zip(start_indices[:-1], end_indices[1:]):
+                        if start < end:
+                            # mask between bo_sp_token and eo_sp_token
+                            loss_mask[start: end + 1] = 0.0  # type: ignore
+                        else:
+                            logger.log(
+                                level=logging.WARNING,
+                                msg=f"len(start_indices)==len(end_indices): case2: start={start} >= end={end}"
+                            )
+            elif len(start_indices) > len(end_indices):
+                # S-E, S-E, S
+                # ... S
+                end_bo_sp_token_idx = start_indices[-1]
+                loss_mask[end_bo_sp_token_idx:] = 0.0  # type: ignore
+                for start, end in zip(start_indices[:-1], end_indices):
                     if start < end:
-                        loss_mask[start: end + 1] = 0.0  # mask between bo_sp_token and eo_sp_token  # type: ignore
-                        # print(f"DEBUG: start={start}, end={end}, tokens={tokens[start: end+1]}, loss_mask={loss_mask[start: end + 1]}", flush=True)
-            # print(f"DEBUG: tokens={tokens}, loss_mask={loss_mask}", flush=True)
+                        # mask between bo_sp_token and eo_sp_token
+                        loss_mask[start: end + 1] = 0.0  # type: ignore
+                    else:
+                        logger.log(
+                            level=logging.WARNING,
+                            msg=f"len(start_indices)>len(end_indices): start={start} >= end={end}"
+                        )
+            elif len(start_indices) < len(end_indices):
+                # ...E, S-E, S-E
+                # ...E, ....
+                first_eo_sp_token_idx = end_indices[0]
+                loss_mask[: first_eo_sp_token_idx + 1] = 0.0  # type: ignore
+                for start, end in zip(start_indices, end_indices[1:]):
+                    if start < end:
+                        # mask between bo_sp_token and eo_sp_token
+                        loss_mask[start: end + 1] = 0.0  # type: ignore
+                    else:
+                        logger.log(
+                            level=logging.WARNING,
+                            msg=f"len(start_indices)<len(end_indices): start={start} >= end={end}"
+                        )
+            else:
+                raise ValueError("invalid condition for special token")
+        # print(f"DEBUG: tokens={tokens}, loss_mask={loss_mask}", flush=True)
 
         # Batch padding sequence so we mask the loss
         if idx is None:

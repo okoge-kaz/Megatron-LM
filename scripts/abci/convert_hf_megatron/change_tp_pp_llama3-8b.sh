@@ -22,16 +22,19 @@ source .env/bin/activate
 TENSOR_PARALLEL_SIZE=2
 PIPELINE_PARALLEL_SIZE=4
 
-ITERATION=12500
+TARGET_TENSOR_PARALLEL_SIZE=2
+TARGET_PIPELINE_PARALLEL_SIZE=2
+
+ITERATION=2500
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
-EXPERIMENT=refinedweb
+EXPERIMENT=fineweb-edu
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/${EXPERIMENT}/tp2-pp4-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
-HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b/${EXPERIMENT}/tp2-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/${EXPERIMENT}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+TARGET_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/${EXPERIMENT}/tp2-pp2-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1/
 
-mkdir -p ${HF_CHECKPOINT_DIR}
+mkdir -p ${TARGET_CHECKPOINT_DIR}
 
 CURRENT_ITERATION=$(cat "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt")
 
@@ -40,16 +43,19 @@ echo $ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
 # tokenizer config
 TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3-70B
 
+export CUDA_DEVICE_MAX_CONNECTIONS=1
 # convert
 python tools/checkpoint/convert.py \
   --model-type GPT \
   --loader mcore \
-  --saver llama3_hf \
+  --saver mcore \
   --load-dir ${MEGATRON_CHECKPOINT_DIR} \
-  --save-dir ${HF_CHECKPOINT_DIR} \
-  --hf-tokenizer-path ${TOKENIZER_MODEL_DIR} \
-  --save-dtype bfloat16 \
+  --save-dir ${TARGET_CHECKPOINT_DIR} \
+  --target-tensor-parallel-size ${TARGET_TENSOR_PARALLEL_SIZE} \
+  --target-pipeline-parallel-size ${TARGET_PIPELINE_PARALLEL_SIZE} \
+  --position-embedding-type rope \
   --loader-transformer-impl transformer_engine \
+  --saver-transformer-impl transformer_engine \
   --megatron-path /bb/llm/gaf51275/2024/Megatron-LM-latest
 
 # change checkpoint iteration

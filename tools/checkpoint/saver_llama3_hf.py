@@ -12,6 +12,7 @@ def add_arguments(parser):
     group.add_argument('--hf-tokenizer-path', type=str, default=None,
                        help='Huggingface tokenizer path. eg. /models/llama-3-hf.')
     group.add_argument('--save-dtype', type=str, default='bfloat16')
+    group.add_argument('--llama-3-1', action='store_true')
 
 
 @contextmanager
@@ -75,6 +76,21 @@ def save_checkpoint(queue: mp.Queue, args):
     else:
         torch_dtype = torch.float16
 
+    rope_scaling = None
+    if args.llama_3_1:
+        assert mag_conf.rope_factor == 8.0
+        assert mag_conf.rope_low_freq_factor == 1.0
+        assert mag_conf.rope_high_freq_factor == 4.0
+        assert mag_conf.rope_original_max_positional_embeddings == 8192
+
+        rope_scaling = {
+            "factor": 8.0,
+            "low_freq_factor": 1.0,
+            "high_freq_factor": 4.0,
+            "original_max_position_embeddings": 8192,
+            "rope_type": "llama3"
+        }
+
     llama_conf = LlamaConfig(
         vocab_size=mag_conf.padded_vocab_size,
         hidden_size=mag_conf.hidden_size,
@@ -88,6 +104,7 @@ def save_checkpoint(queue: mp.Queue, args):
         eos_token_id=128001,
         tie_word_embeddings=not mag_conf.untie_embeddings_and_output_weights,
         rope_theta=mag_conf.rope_theta,
+        rope_scaling=rope_scaling,
         attention_bias=mag_conf.add_bias_linear,
         torch_dtype=torch_dtype
     )

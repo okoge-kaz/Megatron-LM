@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=16
-#$ -l h_rt=10:00:00:00
+#$ -l h_rt=7:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3-8b-ablation/
 #$ -cwd
@@ -70,7 +70,7 @@ GRAD_CLIP=1
 # model config
 TOKENIZER_MODEL=/groups/gag51395/hf-checkpoints/Meta-Llama-3-8B/tokenizer.json
 CHECKPOINT_DIR=/groups/gag51395/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/groups/gag51395/checkpoints/Llama-3-8b/exp9/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
+CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/exp9/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
 
 echo ${CHECKPOINT_SAVE_DIR}
 
@@ -90,7 +90,7 @@ TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 35052747941 /bb/llm/gaf51275/datasets/Meta-L
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1691211578 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/ja_wiki_merged_text_document"
 
 # en parallel corpus
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 882674099 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/default_plain_text_format_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 882674099 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/default_plain_text_format_text_document"
 
 # en wiki
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 2051715275 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/en_wiki_merged_train_text_document"
@@ -110,7 +110,7 @@ TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 156376851.0 /bb/llm/gaf51275/datasets/Meta-L
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 3718158072 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/algebraic-stack_text_document"
 
 # math open-web-math
-# TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 3718158072 /scratch/acf15649kv/Meta-Llama-3_original_transformers-4.40.1/proof-pile-2-train_merged_open-web-math_text_document"
+# TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 3718158072 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/proof-pile-2-train_merged_open-web-math_text_document"
 
 # job name
 JOB_NAME="Llama-3-8b-exp9-ABCI-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
@@ -171,7 +171,7 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --log-interval 1 \
-  --save-interval 250 \
+  --save-interval 500 \
   --eval-interval 500 \
   --eval-iters 10 \
   --bf16 \
@@ -197,7 +197,6 @@ mpirun -np $NUM_GPUS \
   --use-z-loss \
   --log-throughput \
   --log-straggler \
-  --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
   --wandb-project "Llama-3-8B-ablation" \
   --wandb-entity "prj-jalm"
