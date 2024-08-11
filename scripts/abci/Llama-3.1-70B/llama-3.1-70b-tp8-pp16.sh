@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=32
-#$ -l h_rt=5:00:00:00
+#$ -l h_rt=0:02:00:00
 #$ -j y
 #$ -o outputs/Llama-3.1-70b/
 #$ -cwd
@@ -11,9 +11,10 @@ module use /bb/llm/gaf51275/modules/modulefiles
 
 module load cuda/12.1/12.1.1
 module load cudnn/cuda-12.1/9.0.0
-module load nccl/2.20.5
+module load nccl/2.17/2.17.1-1
 module load hpcx/2.12
 module load gcc/11.4.0
+module load nccl-rdma-sharp-plugins/v2.5.x-4ccb98a
 
 
 # swich virtual env
@@ -151,6 +152,11 @@ mpirun -np $NUM_GPUS \
   -x MASTER_PORT=$MASTER_PORT \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
   -x LD_LIBRARY_PATH \
+  -x NCCL_DEBUG=INFO \
+  -x NCCL_COLLNET_ENABLE=1 \
+  -x SHARP_COLL_LOCK_ON_COMM_INIT=1 \
+  -x SHARP_COLL_NUM_COLL_GROUP_RESOURCE_ALLOC_THRESHOLD=0 \
+  -x SHARP_COLL_LOG_LEVEL=3 \
   -x PATH \
   -bind-to none \
   -x PATH \
@@ -160,6 +166,8 @@ mpirun -np $NUM_GPUS \
   --context-parallel-size ${CONTEXT_PARALLEL_SIZE} \
   --sequence-parallel \
   --use-distributed-optimizer \
+  --overlap-grad-reduce \
+  --overlap-param-gather \
   --distributed-timeout-minutes 15 \
   --num-layers ${NUM_LAYERS} \
   --hidden-size ${HIDDEN_SIZE} \
