@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=1
-#$ -l h_rt=0:00:30:00
+#$ -l h_rt=0:01:00:00
 #$ -j y
 #$ -o outputs/megatron-to-hf/
 #$ -cwd
@@ -19,17 +19,15 @@ module load gcc/11.4.0
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=2
-PIPELINE_PARALLEL_SIZE=4
+TENSOR_PARALLEL_SIZE=4
+PIPELINE_PARALLEL_SIZE=2
 
 ITERATION=2500
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
-EXPERIMENT=datacom-lm
-
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b/${EXPERIMENT}/tp2-pp4-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
-HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b/${EXPERIMENT}/tp2-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
 mkdir -p ${HF_CHECKPOINT_DIR}
 
