@@ -19,8 +19,8 @@ module load ninja/1.11.1
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=4
-PIPELINE_PARALLEL_SIZE=1
+TENSOR_PARALLEL_SIZE=2
+PIPELINE_PARALLEL_SIZE=2
 
 # model config
 HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3.1-8B

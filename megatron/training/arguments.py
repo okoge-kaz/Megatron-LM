@@ -847,7 +847,6 @@ def _add_network_size_args(parser):
     group.add_argument('--rotary-percent', type=float, default=1.0,
                        help='Percent of rotary dimension to use, default 100%%')
     group.add_argument('--rotary-interleaved', action='store_true', help='Use interleaved rotary embedding.')
-    group.add_argument('--rope-theta', type=float, default=10000)
     group.add_argument('--rope-factor', type=float, default=None)
     group.add_argument('--rope-low-freq-factor', type=float, default=None)
     group.add_argument('--rope-high-freq-factor', type=float, default=None)
