@@ -1,15 +1,19 @@
 # Copyright (c) 2024, NVIDIA CORPORATION. All rights reserved.
 
 """Megatron global variables."""
-
+import argparse
 import os
 import sys
+import typing
+
 import torch
 
 from megatron.core import Timers
 from megatron.core.num_microbatches_calculator import init_num_microbatches_calculator
+from megatron.core import Timers
 from megatron.training import dist_signal_handler
 from megatron.training.tokenizer import build_tokenizer
+
 
 _GLOBAL_ARGS = None
 _GLOBAL_TOKENIZER = None
@@ -19,6 +23,9 @@ _GLOBAL_ONE_LOGGER = None
 _GLOBAL_ADLR_AUTORESUME = None
 _GLOBAL_TIMERS = None
 _GLOBAL_SIGNAL_HANDLER = None
+_GLOBAL_DYNAMIC_CHECKPOINT = None
+_GLOBAL_MAINTENANCE_DETECTED_TIME = None
+
 
 def get_args():
     """Return arguments."""
@@ -49,6 +56,7 @@ def get_one_logger():
     to check if it is initialized."""
     return _GLOBAL_ONE_LOGGER
 
+
 def get_adlr_autoresume():
     """ADLR autoresume object. It can be None so no need
     to check if it is initialized."""
@@ -58,7 +66,7 @@ def get_adlr_autoresume():
 def get_timers():
     """Return timers."""
     _ensure_var_is_initialized(_GLOBAL_TIMERS, 'timers')
-    return _GLOBAL_TIMERS
+    return typing.cast(Timers, _GLOBAL_TIMERS)
 
 
 def get_signal_handler():
@@ -70,7 +78,6 @@ def _set_signal_handler():
     global _GLOBAL_SIGNAL_HANDLER
     _ensure_var_is_not_initialized(_GLOBAL_SIGNAL_HANDLER, 'signal handler')
     _GLOBAL_SIGNAL_HANDLER = dist_signal_handler.DistributedSignalHandler().__enter__()
-
 
 
 def set_global_variables(args, build_tokenizer=True):
@@ -96,6 +103,8 @@ def set_global_variables(args, build_tokenizer=True):
     _set_one_logger(args)
     _set_adlr_autoresume(args)
     _set_timers(args)
+    _set_global_dynamic_checkpoint()
+    initialize_maintenance_detected_time()
 
     if args.exit_signal_handler:
         _set_signal_handler()
@@ -129,7 +138,7 @@ def _set_tensorboard_writer(args):
     if hasattr(args, 'tensorboard_dir') and \
        args.tensorboard_dir and args.rank == (args.world_size - 1):
         try:
-            from torch.utils.tensorboard import SummaryWriter
+            from torch.utils.tensorboard.writer import SummaryWriter
             print('> setting tensorboard ...')
             _GLOBAL_TENSORBOARD_WRITER = SummaryWriter(
                 log_dir=args.tensorboard_dir,
@@ -145,21 +154,26 @@ def _set_wandb_writer(args):
     _ensure_var_is_not_initialized(_GLOBAL_WANDB_WRITER,
                                    'wandb writer')
     if getattr(args, 'wandb_project', '') and args.rank == (args.world_size - 1):
-        if args.wandb_exp_name == '':
+        if args.wandb_name is None:
             raise ValueError("Please specify the wandb experiment name!")
 
+        from datetime import datetime
+
         import wandb
-        if args.wandb_save_dir:
-            save_dir = args.wandb_save_dir
-        else:
-            # Defaults to the save dir.
-            save_dir = os.path.join(args.save, 'wandb')
+
+        now = datetime.now()
+        now = now.strftime("%Y-%m-%d-%H-%M-%S")
+        exp_name = args.wandb_name + "-" + now
+
         wandb_kwargs = {
-            'dir': save_dir,
-            'name': args.wandb_exp_name,
+            'entity': args.wandb_entity,
+            'name': exp_name,
             'project': args.wandb_project,
-            'config': vars(args)}
-        os.makedirs(wandb_kwargs['dir'], exist_ok=True)
+            'config': vars(args)
+        }
+        if args.wandb_offline:
+            wandb_kwargs['mode'] = 'offline'
+
         wandb.init(**wandb_kwargs)
         _GLOBAL_WANDB_WRITER = wandb
 
@@ -211,6 +225,39 @@ def _set_timers(args):
     global _GLOBAL_TIMERS
     _ensure_var_is_not_initialized(_GLOBAL_TIMERS, 'timers')
     _GLOBAL_TIMERS = Timers(args.timing_log_level, args.timing_log_option)
+
+
+def _set_global_dynamic_checkpoint() -> None:
+    global _GLOBAL_DYNAMIC_CHECKPOINT
+    _ensure_var_is_not_initialized(_GLOBAL_DYNAMIC_CHECKPOINT, 'dynamic checkpoint')
+    _GLOBAL_DYNAMIC_CHECKPOINT = False
+
+
+def update_global_dynamic_checkpoint() -> None:
+    global _GLOBAL_DYNAMIC_CHECKPOINT
+    _GLOBAL_DYNAMIC_CHECKPOINT = True
+
+
+def get_global_dynamic_checkpoint() -> bool:
+    global _GLOBAL_DYNAMIC_CHECKPOINT
+    _ensure_var_is_initialized(_GLOBAL_DYNAMIC_CHECKPOINT, 'dynamic checkpoint')
+    return _GLOBAL_DYNAMIC_CHECKPOINT  # type: ignore
+
+
+def initialize_maintenance_detected_time() -> None:
+    global _GLOBAL_MAINTENANCE_DETECTED_TIME
+    _ensure_var_is_not_initialized(_GLOBAL_MAINTENANCE_DETECTED_TIME, 'maintenance detected time')
+    _GLOBAL_MAINTENANCE_DETECTED_TIME = None
+
+
+def set_maintenance_detected_time(time: float | None) -> None:
+    global _GLOBAL_MAINTENANCE_DETECTED_TIME
+    _GLOBAL_MAINTENANCE_DETECTED_TIME = time
+
+
+def get_maintenance_detected_time() -> float | None:
+    global _GLOBAL_MAINTENANCE_DETECTED_TIME
+    return _GLOBAL_MAINTENANCE_DETECTED_TIME  # type: ignore
 
 
 def _ensure_var_is_initialized(var, name):

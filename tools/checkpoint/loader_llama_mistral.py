@@ -92,7 +92,6 @@ def convert_to_hf(model_path, input_base_path, model_size, tokenizer_path):
         except ImportError:
             raise ImportError("Module 'mistral-common' is required but not installed.")
 
-
     # for backward compatibility, before you needed the repo to be called `my_repo/model_size`
     if not os.path.isfile(os.path.join(input_base_path, "params.json")):
         input_base_path = os.path.join(input_base_path, model_size)

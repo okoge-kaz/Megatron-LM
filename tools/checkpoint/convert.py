@@ -87,6 +87,7 @@ import sys
 # }
 # - "done"
 
+
 def load_plugin(plugin_type, name):
     module_name = f"{plugin_type}_{name}"
     try:
@@ -106,13 +107,12 @@ def load_plugin(plugin_type, name):
     print(f"Loaded {module_name} as the {plugin_type}.")
     return plugin
 
+
 def main():
-    import argparse
     parser = argparse.ArgumentParser(description="Megatron Checkpoint Converter Arguments",
                                      allow_abbrev=False, conflict_handler='resolve')
 
-    parser.add_argument('--model-type', type=str, required=True,
-                        choices=['GPT', 'BERT'],
+    parser.add_argument('--model-type', type=str, required=True, choicess=['GPT', 'BERT'],
                         help='Type of the model')
     parser.add_argument('--loader', type=str, default='megatron',
                         help='Module name to load checkpoint, should be on python path')

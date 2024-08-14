@@ -69,8 +69,16 @@ def parse_args(extra_args_provider=None, ignore_unknown_args=False):
             "Yaml config is not supported with legacy models."
         args = load_yaml(args.yaml_cfg)
 
+    # Distributed args.
+    if args.use_mpi:
+        global_rank = int(os.getenv('OMPI_COMM_WORLD_RANK', 0))
+        local_rank = int(os.getenv('OMPI_COMM_WORLD_LOCAL_RANK', 0))
+        world_size = int(os.getenv('OMPI_COMM_WORLD_SIZE', 1))
 
-    # Args from environment
+        os.environ['RANK'] = str(global_rank)
+        os.environ['LOCAL_RANK'] = str(local_rank)
+        os.environ['WORLD_SIZE'] = str(world_size)
+
     args.rank = int(os.getenv('RANK', '0'))
     args.world_size = int(os.getenv("WORLD_SIZE", '1'))
 
@@ -210,7 +218,7 @@ def validate_args(args, defaults={}):
 
 
     if args.tp_comm_overlap:
-        assert args.sequence_parallel == True, 'Tensor parallel communication/GEMM overlap can happen only when sequence parallelism is enabled'
+        assert args.sequence_parallel is True, 'Tensor parallel communication/GEMM overlap can happen only when sequence parallelism is enabled'
 
     # Deprecated arguments
     assert args.batch_size is None, '--batch-size argument is no longer ' \
@@ -334,6 +342,7 @@ def validate_args(args, defaults={}):
     args.consumed_train_samples = 0
     args.skipped_train_samples = 0
     args.consumed_valid_samples = 0
+    args.consumed_train_tokens = 0
 
     # Support for variable sequence lengths across batches/microbatches.
     # set it if the dataloader supports generation of variable sequence lengths
@@ -525,6 +534,32 @@ def validate_args(args, defaults={}):
         if args.load is not None or args.save is not None:
             assert not args.use_dist_ckpt, "Distributed checkpointing does not work with decoupled LR yet."
 
+    # Skip train iterations
+    if args.skip_train_iteration_range is not None:
+        import collections
+
+        args.skip_train_iteration_range = [
+            list(map(int, range_.split("-"))) for range_ in args.skip_train_iteration_range
+        ]
+        args.skip_train_iteration_range.sort()
+        skip_train_iteration_range = collections.deque()
+        for range_ in args.skip_train_iteration_range:
+            if len(range_) == 2:
+                start, end = range_
+                assert end >= start, "end of skip range cannot be smaller than start of skip range"
+                # merge overlapping intervals (e.g. 1-5 2-6 -> 1-6)
+                if not skip_train_iteration_range:
+                    skip_train_iteration_range.append([start, end])
+                elif skip_train_iteration_range[-1][1] >= start:
+                    skip_train_iteration_range[-1][1] = max(end, skip_train_iteration_range[-1][1])
+                else:
+                    skip_train_iteration_range.append([start, end])
+            else:
+                raise ValueError(
+                    "skip train iterations should be specified as two numbers, i.e. start-end"
+                )
+        args.skip_train_iteration_range = skip_train_iteration_range
+
     # Legacy RoPE arguments
     if args.use_rotary_position_embeddings:
         args.position_embedding_type = 'rope'
@@ -549,7 +584,7 @@ def validate_args(args, defaults={}):
         assert not args.use_legacy_models, "Context parallelism is not supported in legacy models."
 
     # Expert parallelism check
-    if args.expert_model_parallel_size  > 1:
+    if args.expert_model_parallel_size > 1:
         assert args.num_experts is not None, "num_experts must be non None to use expert model parallelism"
         assert args.num_experts % args.expert_model_parallel_size == 0, \
             "Number of experts should be a multiple of expert model parallel_size."
@@ -699,6 +734,7 @@ def _add_transformer_engine_args(parser):
 
     return parser
 
+
 def _add_inference_args(parser):
     group = parser.add_argument_group(title='inference')
 
@@ -810,8 +846,13 @@ def _add_network_size_args(parser):
                        help='Base to use for rotary positional embeddings, default 10000')
     group.add_argument('--rotary-percent', type=float, default=1.0,
                        help='Percent of rotary dimension to use, default 100%%')
-    group.add_argument('--rotary-interleaved', action='store_true',
-                          help='Use interleaved rotary embedding.')
+    group.add_argument('--rotary-interleaved', action='store_true', help='Use interleaved rotary embedding.')
+    group.add_argument('--rope-theta', type=float, default=10000)
+    group.add_argument('--rope-factor', type=float, default=None)
+    group.add_argument('--rope-low-freq-factor', type=float, default=None)
+    group.add_argument('--rope-high-freq-factor', type=float, default=None)
+    group.add_argument('--rope-original-max-positional-embeddings', type=float, default=None)
+    group.add_argument("--use-embedding-scaling", action="store_true")
     group.add_argument('--rotary-seq-len-interpolation-factor', type=int, default=None,
                        help='Sequence length interpolation factor for rotary embeddings.')
     group.add_argument('--no-position-embedding',
@@ -850,6 +891,7 @@ def _add_network_size_args(parser):
     group.add_argument('--untie-embeddings-and-output-weights', action='store_true',
                        help='Untie embeddings and output weights.'),
     return parser
+
 
 
 def _add_straggler_detector_args(parser):
@@ -971,12 +1013,16 @@ def _add_logging_args(parser):
     group.add_argument('--log-world-size-to-tensorboard',
                        action='store_true',
                        help='Enable world size logging to tensorboard.')
-    group.add_argument('--wandb-project', type=str, default='',
+    group.add_argument('--wandb-project', type=str, default=None,
                        help='The wandb project name. Ignore wandb by default.')
-    group.add_argument('--wandb-exp-name', type=str, default='',
+    group.add_argument('--wandb-name', type=str, default=None,
                        help='The wandb experiment name.')
     group.add_argument('--wandb-save-dir', type=str, default='',
                        help='Path to save the wandb results locally.')
+    group.add_argument('--wandb-offline', action='store_true')
+    group.add_argument("--use-mpi", action="store_true", default=False)
+    group.add_argument('--wandb-entity', type=str, default=None)
+    group.add_argument("--wandb-id", default=None)
     group.add_argument('--logging-level', type=int, default=None,
                        help='Set default logging level')
     return parser
@@ -1244,6 +1290,9 @@ def _add_training_args(parser):
     group.add_argument('--disable-tp-comm-split-rs', action='store_false',
                        help='Disables the Reduce-Scatter overlap with fprop GEMM.',
                        dest='tp_comm_split_rs')
+    group.add_argument('--skip-train-iteration-range', type=str, nargs='+', default=None,
+                       help='Iteration ranges to skip. The values are one or more dash-separated ranges. e.g., 101-200 251-300.')
+    group.add_argument("--use-z-loss", action="store_true", help="use z-loss for supplement loss (Google PaLM method)")
 
     return parser
 
@@ -1423,6 +1472,9 @@ def _add_checkpointing_args(parser):
                             ' Check StrictHandling docs for flags meaning.'
                             ' NOTE: This flag controls only distributed checkpoint'
                             ' load from storage, not loading state dict into the model.')
+    group.add_argument('--use-gcp-dynamic-checkpointing', action='store_true')
+    group.add_argument('--dynamic-checkpointing-min', type=int, default=0)
+
     return parser
 
 
@@ -1639,6 +1691,7 @@ def _add_data_args(parser):
                                 'GPTSentencePieceTokenizer',
                                 'HuggingFaceTokenizer',
                                 'Llama2Tokenizer',
+                                'Llama3Tokenizer_HF',
                                 'Llama3Tokenizer',
                                 'MistralTokenizer',
                                 'TikTokenizer',
@@ -1646,6 +1699,8 @@ def _add_data_args(parser):
                        help='What type of tokenizer to use.')
     group.add_argument('--tokenizer-model', type=str, default=None,
                        help='Sentencepiece tokenizer model.')
+    group.add_argument('--begin-of-special-token-id', type=int, default=None)
+    group.add_argument('--end-of-special-token-id', type=int, default=None)
     group.add_argument('--tiktoken-pattern', type=str, default=None,
                        help='Which tiktoken pattern to use. Options: [v1, v2]')
     group.add_argument('--tiktoken-num-special-tokens', type=int, default=1000,

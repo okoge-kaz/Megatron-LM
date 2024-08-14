@@ -17,6 +17,8 @@ import time
 # The earliest we can measure the start time.
 _TRAIN_START_TIME = time.time()
 import torch
+import torch.distributed as torch_distributed
+import wandb
 
 from megatron.core import mpu, tensor_parallel
 from megatron.core.utils import check_param_hashes_across_dp_replicas, get_model_config, StragglerDetector
@@ -65,25 +67,53 @@ from .global_vars import (
     get_timers,
     get_tensorboard_writer,
     get_wandb_writer,
-    get_one_logger)
+    get_one_logger
+)
 from . import one_logger_utils
 
 from . import ft_integration
 
 stimer = StragglerDetector()
 
+
 def destroy_global_state():
     destroy_global_vars()
     destroy_num_microbatches_calculator()
     destroy_global_memory_buffer()
     destroy_model_parallel()
-    
+
 
 def print_datetime(string):
     """Note that this call will sync across all ranks."""
-    torch.distributed.barrier()
+    torch_distributed.barrier()
     time_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print_rank_0('[' + string + '] datetime: {} '.format(time_str))
+
+
+import requests
+
+
+def check_maintenance_event() -> bool:
+    # GCP metadata request URL
+    URL = "http://metadata.google.internal/computeMetadata/v1/instance/maintenance-event"
+    headers = {"Metadata-Flavor": "Google"}
+
+    try:
+        response = requests.get(URL, headers=headers)
+        # status code check
+        if response.status_code == 200:
+            event = response.text
+            if "TERMINATE_ON_HOST_MAINTENANCE" in event:
+                print("INFO: Host maintenance detected.")
+                return True
+            else:
+                return False
+        else:
+            print("request is failed. status code:", response.status_code)
+            return False
+    except Exception as e:
+        print("exception occurs when requesting:", e)
+        return False
 
 
 def num_floating_point_operations(args, batch_size):
@@ -616,22 +646,7 @@ def setup_model_and_optimizer(model_provider_func,
         if args.fp16:
             optimizer.reload_model_params()
 
-    # Convert checkpoint format.
-    if args.ckpt_convert_format is not None:
-        load_ckpt_format = args.ckpt_format
-        args.ckpt_format = args.ckpt_convert_format
-        args.save = os.path.join(args.ckpt_convert_save, args.ckpt_convert_format)
-        update_use_dist_ckpt(args)
-        
-        save_checkpoint(args.iteration, model, optimizer, opt_param_scheduler,
-                        args.num_floating_point_operations_so_far)
-
-        print_rank_0("> converted checkpoint: %s -> %s." % (load_ckpt_format, args.ckpt_format))
-        torch.distributed.barrier()
-        exit()
-
     return model, optimizer, opt_param_scheduler
-
 
 
 def train_step(forward_step_func, data_iterator,
@@ -715,7 +730,7 @@ def train_step(forward_step_func, data_iterator,
 
 def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_rate, iteration,
                  loss_scale, report_memory_flag, skipped_iter,
-                 grad_norm, params_norm, num_zeros_in_grad):
+                 grad_norm, params_norm, num_zeros_in_grad, optimizer=None, skipped_iteration=0):
     """Log training information such as losses, timing, ...."""
     args = get_args()
     timers = get_timers()
@@ -794,7 +809,7 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
     if args.log_timers_to_tensorboard and \
        (iteration % args.tensorboard_log_interval == 0):
         timers.write(timers_to_log, writer, iteration,
-                     normalizer=total_iterations)
+                     normalizer=total_iterations, barrier=False, wandb_writer=wandb_writer)
     if writer and (iteration % args.tensorboard_log_interval == 0):
         if wandb_writer:
             wandb_writer.log({'samples vs steps': args.consumed_train_samples},
@@ -872,14 +887,95 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
         moe_loss_scale = 1 / get_num_microbatches()
         track_moe_metrics(moe_loss_scale, iteration, writer, wandb_writer, total_loss_dict, args.moe_per_layer_logging)
 
+    import typing
+
+    wandb_stats: dict[str, typing.Any] = {}
+
+    opt_stats = [0.0] * 8
+    opt_stats_2 = [0.0] * 4
+    if optimizer is not None:
+        """logging optimizer states"""
+        for _, param_group in enumerate(optimizer.param_groups):
+            for _, param in enumerate(param_group["params"]):
+                opt_stats[0] += (torch.norm(optimizer.state[param]['exp_avg_sq']).item())**2
+                opt_stats[1] += (torch.norm(optimizer.state[param]['exp_avg_sq'].sqrt()).item())**2
+                opt_stats[2] += (torch.norm(optimizer.state[param]['exp_avg']).item())**2
+                opt_stats[3] += (torch.norm(param).item())**2
+                opt_stats[4] += torch.norm(optimizer.state[param]['exp_avg_sq'], p=1).item()
+                opt_stats[5] += torch.norm(optimizer.state[param]['exp_avg_sq'].sqrt(), p=1).item()
+                opt_stats[6] += torch.norm(optimizer.state[param]['exp_avg'], p=1).item()
+                opt_stats[7] += torch.norm(param, p=1).item()
+                opt_stats_2[0] = max(opt_stats_2[0], abs(optimizer.state[param]['exp_avg_sq'].max().item()), abs(optimizer.state[param]['exp_avg_sq'].min().item()))
+                opt_stats_2[1] = max(opt_stats_2[1], optimizer.state[param]['exp_avg_sq'].sqrt().abs_().max().item())
+                opt_stats_2[2] = max(opt_stats_2[2], abs(optimizer.state[param]['exp_avg'].max().item()), abs(optimizer.state[param]['exp_avg'].min().item()))
+                opt_stats_2[3] = max(opt_stats_2[3], abs(param.max().item()), abs(param.min().item()))
+
+    if wandb_writer and (iteration % args.tensorboard_log_interval == 0) and is_last_rank():
+        wandb_stats["utils/steps-vs-samples"] = args.consumed_train_samples
+        wandb_stats["utils/steps-vs-tokens"] = args.consumed_train_tokens
+
+        if args.log_learning_rate_to_tensorboard:
+            wandb_stats["utils/learning-rate"] = learning_rate
+
+        if args.log_batch_size_to_tensorboard:
+            wandb_stats["utils/batch-size"] = batch_size
+
+        for key in loss_dict:
+            wandb_stats[f"lm-loss-training/{key}"] = loss_dict[key]
+            wandb_stats[f"lm-loss-training/{key}_ppl"] = math.exp(total_loss_dict[key].item())
+        if args.log_loss_scale_to_tensorboard:
+            wandb_stats["others/loss-scale"] = loss_scale
+        if grad_norm is not None:
+            wandb_stats["others/grad-norm"] = grad_norm
+        if num_zeros_in_grad is not None:
+            wandb_stats["others/num-zeros"] = num_zeros_in_grad
+        if params_norm is not None:
+            wandb_stats["others/params-norm"] = params_norm
+        if hasattr(args, 'actual_seq_length'):
+            wandb_stats["others/actual_seq_length"] = args.actual_seq_length
+
+        if optimizer is not None:
+            wandb_stats['optimizer/variance_l2'] = opt_stats[0]**0.5
+            wandb_stats['optimizer/variance_sqrt_l2'] = opt_stats[1]**0.5
+            wandb_stats['optimizer/momentum_l2'] = opt_stats[2]**0.5
+            wandb_stats['optimizer/weight_l2'] = opt_stats[3]**0.5
+            wandb_stats['optimizer/variance_l1'] = opt_stats[4]
+            wandb_stats['optimizer/variance_sqrt_l1'] = opt_stats[5]
+            wandb_stats['optimizer/momentum_l1'] = opt_stats[6]
+            wandb_stats['optimizer/weight_l1'] = opt_stats[7]
+            wandb_stats['optimizer/variance_abs_max'] = opt_stats_2[0]
+            wandb_stats['optimizer/variance_sqrt_abs_max'] = opt_stats_2[1]
+            wandb_stats['optimizer/momentum_abs_max'] = opt_stats_2[2]
+            wandb_stats['optimizer/weight_abs_max'] = opt_stats_2[3]
+
     if iteration % args.log_interval == 0:
         elapsed_time = timers('interval-time').elapsed(barrier=True)
         elapsed_time_per_iteration = elapsed_time / total_iterations
 
+        from megatron.training.utils import throughput_calculator
+
+        samples_per_sec, tflops, samples_per_model, model_replica_count = throughput_calculator(
+            args=args, iteration_time=elapsed_time, total_iterations=total_iterations
+        )
+        # Compute throughput.
+        samples_per_sec_per_replica = samples_per_sec / args.data_parallel_size
+        tokens_per_sec = samples_per_sec * args.seq_length
+        tokens_per_sec_per_replica = tokens_per_sec / args.data_parallel_size
         throughput = num_floating_point_operations(args, batch_size) / (
             elapsed_time_per_iteration * 10**12 * args.world_size)
 
         one_logger_utils.track_e2e_metrics(args.log_throughput, throughput)
+
+        wandb_stats["stats/tflops"] = throughput
+        wandb_stats["stats/samples_per_sec"] = samples_per_sec
+        wandb_stats["stats/samples_per_sec_per_replica"] = samples_per_sec_per_replica
+        wandb_stats["stats/tokens_per_sec"] = tokens_per_sec
+        wandb_stats["stats/tokens_per_sec_per_replica"] = tokens_per_sec_per_replica
+
+        # log skip batch
+        wandb_stats["others/skipped_iterations"] = skipped_iteration
+        if wandb_writer and is_last_rank():
+            wandb_writer.log(wandb_stats, step=iteration)
 
         if args.log_timers_to_tensorboard:
             if writer:
@@ -905,6 +1001,8 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
                     writer.add_scalar('throughput', throughput, iteration)
                 if wandb_writer:
                     wandb_writer.log({'throughput': throughput}, iteration)
+        log_string += ' iteration time: {:.3f} s'.format(elapsed_time)
+        log_string += ' samples/sec: {:.1f} |'.format(samples_per_sec)
         assert learning_rate is not None
         # Decoupled_learning_rate should be not None only on first and last pipeline stage.
         log_string += ' learning rate: {:.6E} |'.format(learning_rate)
@@ -1083,6 +1181,17 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
     report_memory_flag = True
     exit = False
 
+    skipped_iteration: int = 0
+
+    # flush intervals prior to current iteration
+    if args.skip_train_iteration_range is not None:
+        import bisect
+
+        ends = [end for start, end in args.skip_train_iteration_range]
+        index = bisect.bisect_left(ends, iteration)
+        for _ in range(index):
+            args.skip_train_iteration_range.popleft()
+
     if args.manual_gc:
         # Disable the default garbage collector and perform the collection manually.
         # This is to align the timing of garbage collection across ranks.
@@ -1127,6 +1236,24 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
             one_logger.store_set('get_e2e_base_metrics', get_e2e_base_metrics)
 
     while iteration < args.train_iters:
+        if (
+            # train_data_iterator is not None
+            args.skip_train_iteration_range is not None
+            and len(args.skip_train_iteration_range) > 0
+            and args.skip_train_iteration_range[0][0] <= iteration + 1 <= args.skip_train_iteration_range[0][1]
+        ):
+            start, end = args.skip_train_iteration_range.popleft()
+            print_rank_0(f"Skipped iterations {start} to {end} due to --skip-train-iteration-range flag.")
+            iteration_for_skipping = iteration
+            while iteration_for_skipping + 1 <= end:
+                try:
+                    _ = next(train_data_iterator)
+                except TypeError:
+                    pass
+                iteration_for_skipping += 1
+                skipped_iteration += 1
+            continue
+
         if args.profile and \
            iteration == args.profile_step_start and \
            torch.distributed.get_rank() in args.profile_ranks:
@@ -1171,6 +1298,7 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
         else:
             assert num_skipped_samples_in_batch == 0
         args.skipped_train_samples += num_skipped_samples_in_batch
+        args.consumed_train_tokens += args.seq_length * batch_size
         num_fp_ops = num_floating_point_operations(args, batch_size)
         num_floating_point_operations_so_far += num_fp_ops
         total_flops += num_fp_ops
@@ -1215,7 +1343,8 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
                                           decoupled_learning_rate,
                                           iteration, loss_scale,
                                           report_memory_flag, skipped_iter,
-                                          grad_norm, params_norm, num_zeros_in_grad)
+                                          grad_norm, params_norm, num_zeros_in_grad,
+                                          optimizer=optimizer, skipped_iteration=skipped_iteration)
 
         # StragglerDetector
         if iteration % args.log_interval == 0 and args.log_straggler:
@@ -1477,6 +1606,7 @@ def evaluate(forward_step_func,
 
     return total_loss_dict, collected_non_loss_data, False
 
+
 def evaluate_and_print_results(prefix, forward_step_func,
                                data_iterator, model,
                                iteration, process_non_loss_data_func, config,
@@ -1513,10 +1643,10 @@ def evaluate_and_print_results(prefix, forward_step_func,
                                   iteration)
                 writer.add_scalar('{} validation ppl vs samples'.format(key),
                                   ppl, args.consumed_train_samples)
-            if wandb_writer and is_last_rank():
-                wandb_writer.log({
-                    '{} validation'.format(key): total_loss_dict[key].item()},
-                    iteration)
+        if wandb_writer and is_last_rank():
+            wandb_writer.log({
+                '{} validation'.format(key): total_loss_dict[key].item()},
+                iteration)
 
     if process_non_loss_data_func is not None and writer and is_last_rank():
         process_non_loss_data_func(collected_non_loss_data, iteration, writer)
@@ -1665,3 +1795,4 @@ def build_train_valid_test_data_iterators(
         test_data_iterator = None
 
     return train_data_iterator, valid_data_iterator, test_data_iterator
+
