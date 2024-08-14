@@ -7,11 +7,11 @@
 # priotiry: -5: normal, -4: high, -3: highest
 
 # Load modules
-module use ~/modulefiles
+module use /gs/fs/tga-NII-LLM/modules/modulefiles
 
 module load ylab/cuda/12.1
 module load ylab/cudnn/8.9.7
-module load ylab/nccl/cuda-12.1/2.18.3
+module load ylab/nccl/cuda-12.2/2.20.5
 module load ylab/hpcx/2.17.1
 module load ninja/1.11.1
 
@@ -19,30 +19,27 @@ module load ninja/1.11.1
 source .env/bin/activate
 
 pip install --upgrade pip
+pip install --upgrade wheel cmake ninja packaging
 
 # Install packages
 pip install -r requirements.txt
 
 # nvidia apex
-cd ..
-
 git clone git@github.com:NVIDIA/apex.git
 cd apex
+
+# ref: https://github.com/NVIDIA/apex/releases/tag/24.04.01
+git checkout 24.04.01
 
 pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
 
 # transformer engine
-git clone --branch stable --recursive https://github.com/NVIDIA/TransformerEngine.git
-
-cd TransformerEngine
-export NVTE_FRAMEWORK=pytorch
-pip install .
+pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.7
 
 # flash-atten
-cd ..
 git clone git@github.com:Dao-AILab/flash-attention.git
 cd flash-attention
-
-git checkout v2.4.2
-
+git checkout v2.5.8
 pip install -e .
+
+pip install transformers accelerate zarr tensorstore
