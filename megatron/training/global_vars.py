@@ -27,10 +27,10 @@ _GLOBAL_DYNAMIC_CHECKPOINT = None
 _GLOBAL_MAINTENANCE_DETECTED_TIME = None
 
 
-def get_args():
+def get_args() -> argparse.Namespace:
     """Return arguments."""
     _ensure_var_is_initialized(_GLOBAL_ARGS, 'args')
-    return _GLOBAL_ARGS
+    return _GLOBAL_ARGS  # type: ignore
 
 
 def get_tokenizer():
