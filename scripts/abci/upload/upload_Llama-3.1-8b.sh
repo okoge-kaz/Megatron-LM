@@ -2,8 +2,8 @@
 
 set -e
 
-start=5000
-end=5000
+start=17500
+end=20000
 increment=2500
 
 upload_base_dir=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b/tp4-pp2-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1
