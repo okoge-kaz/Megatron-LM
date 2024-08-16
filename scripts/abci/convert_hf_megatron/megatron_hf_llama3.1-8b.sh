@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=1
-#$ -l h_rt=0:02:00:00
+#$ -l h_rt=0:0:10:00
 #$ -j y
 #$ -o outputs/megatron-to-hf/
 #$ -cwd
@@ -23,8 +23,8 @@ TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=2
 
 # iteration settings
-START_ITERATION=17500
-END_ITERATION=20000
+START_ITERATION=27500
+END_ITERATION=27500
 STEP=2500
 
 # model config
