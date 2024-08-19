@@ -2,8 +2,8 @@
 #$ -cwd
 #$ -l node_f=1
 #$ -l h_rt=2:00:00
-#$ -o outputs/convert/hf_megatron/$JOB_ID.log
-#$ -e outputs/convert/hf_megatron/$JOB_ID.log
+#$ -o outputs/convert/megatron_hf/$JOB_ID.log
+#$ -e outputs/convert/megatron_hf/$JOB_ID.log
 #$ -p -5
 
 # Load modules
@@ -21,12 +21,12 @@ source .env/bin/activate
 # distributed settings
 TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=8
-ITERATION=1
+ITERATION=2500
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3.1-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3.1-70b/checkpoint-convert-test/iter_${FORMATTED_ITERATION}
+MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/Llama-3.1-70B/tp4-pp8-ct1-LR1.0E-5-MINLR1.0E-6-WD0.1
+HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3.1-70b/LR1.0E-5-MINLR1.0E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
 mkdir -p ${HF_CHECKPOINT_DIR}
 
