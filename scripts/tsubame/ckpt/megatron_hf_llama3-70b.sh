@@ -15,14 +15,14 @@ module load ylab/nccl/cuda-12.1/2.18.3
 module load ylab/hpcx/2.17.1
 module load ninja/1.11.1
 
-# swich virtual env
+# switch virtual env
 source .env/bin/activate
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=8
 
-ITERATION=8000
+ITERATION=12500
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
 # model config

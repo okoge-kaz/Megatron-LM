@@ -1,10 +1,10 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=1
-#$ -l h_rt=2:00:00
+#$ -l h_rt=1:00:00
 #$ -o outputs/convert/megatron_hf/$JOB_ID.log
 #$ -e outputs/convert/megatron_hf/$JOB_ID.log
-#$ -p -5
+#$ -p -3
 
 # Load modules
 module use /gs/fs/tga-NII-LLM/modules/modulefiles
@@ -15,13 +15,13 @@ module load ylab/nccl/cuda-12.2/2.20.5
 module load ylab/hpcx/2.17.1
 module load ninja/1.11.1
 
-# swich virtual env
+# switch virtual env
 source .env/bin/activate
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=8
-ITERATION=2500
+ITERATION=5000
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
 # model config
