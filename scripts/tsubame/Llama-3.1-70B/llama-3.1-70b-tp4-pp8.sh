@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=32
-#$ -l h_rt=00:1:00:00
+#$ -l h_rt=06:23:50:00
 #$ -o outputs/Llama-3.1-70b/$JOB_ID.log
 #$ -e outputs/Llama-3.1-70b/$JOB_ID.log
 #$ -p -5
@@ -57,7 +57,7 @@ PIPLINE_MODEL_CHUNKS=1
 LAYERS_PER_VIRTUAL_PIPELINE_STAGE=$((${NUM_LAYERS} / ${PIPELINE_PARALLEL_SIZE} / ${PIPLINE_MODEL_CHUNKS}))
 
 # training config
-MICRO_BATCH_SIZE=2
+MICRO_BATCH_SIZE=1
 GLOBAL_BATCH_SIZE=1024
 TRAIN_STEPS=25000
 LR_DECAY_ITERS=25000
@@ -344,6 +344,7 @@ mpirun -np $NUM_GPUS \
   -x MASTER_ADDR=$MASTER_ADDR \
   -x MASTER_PORT=$MASTER_PORT \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
+  -x NCCL_IB_TIMEOUT=22 \
   -x LD_LIBRARY_PATH \
   -x PATH \
   -bind-to none \
@@ -388,7 +389,7 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --log-interval 1 \
-  --save-interval 500 \
+  --save-interval 250 \
   --no-initialization \
   --exit-on-missing-checkpoint \
   --eval-interval 500 \
@@ -412,8 +413,6 @@ mpirun -np $NUM_GPUS \
   --hidden-dropout 0.0 \
   --swiglu \
   --use-flash-attn \
-  --recompute-activations \
-  --recompute-granularity "selective" \
   --attention-softmax-in-fp32 \
   --accumulate-allreduce-grads-in-fp32 \
   --transformer-impl "transformer_engine" \
