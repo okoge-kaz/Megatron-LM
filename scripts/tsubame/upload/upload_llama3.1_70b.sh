@@ -10,12 +10,12 @@ set -e
 
 source .env/bin/activate
 
-start=12500
-end=12500
+start=2500
+end=2500
 increment=1000
 
 base_dirs=(
-  "/gs/bs/tgh-NII-LLM/checkpoints/megatron-to-hf/Llama-3-70b-hf/exp6-fp8/LR1.0E-5-MINLR1.0E-6-WD0.1"
+  "/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3.1-70b/LR1.0E-5-MINLR1.0E-6-WD0.1"
 )
 
 for base_dir in "${base_dirs[@]}"; do
@@ -24,6 +24,6 @@ for base_dir in "${base_dirs[@]}"; do
 
     python scripts/abci/upload/upload.py \
       --ckpt-path $upload_dir \
-      --repo-name tokyotech-llm/Llama-3-70b-exp6-fp8-$(basename $base_dir)-iter$(printf "%07d" $i)
+      --repo-name tokyotech-llm/Llama-3.1-70b-$(basename $base_dir)-iter$(printf "%07d" $i)
   done
 done
