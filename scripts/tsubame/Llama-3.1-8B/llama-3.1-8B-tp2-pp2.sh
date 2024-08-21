@@ -4,7 +4,7 @@
 #$ -l h_rt=00:2:00:00
 #$ -o outputs/Llama-3.1-8b/$JOB_ID.log
 #$ -e outputs/Llama-3.1-8b/$JOB_ID.log
-#$ -p -3
+#$ -p -4
 
 # Load modules
 module use /gs/fs/tga-NII-LLM/modules/modulefiles
@@ -336,6 +336,9 @@ if [[ ${LOG_TIMER} == "True" ]]; then
   TIMER_ARGS="${TIMER_ARGS} --timing-log-level 2"
 fi
 
+# pytorch profiler
+TENSORBOARD_DIR="${CHECKPOINT_SAVE_DIR}/tensorboard"
+
 # run
 mpirun -np $NUM_GPUS \
   --npernode $NUM_GPU_PER_NODE \
@@ -412,8 +415,6 @@ mpirun -np $NUM_GPUS \
   --hidden-dropout 0.0 \
   --swiglu \
   --use-flash-attn \
-  --recompute-activations \
-  --recompute-granularity "selective" \
   --attention-softmax-in-fp32 \
   --accumulate-allreduce-grads-in-fp32 \
   --transformer-impl "transformer_engine" \
@@ -422,6 +423,17 @@ mpirun -np $NUM_GPUS \
   ${TIMER_ARGS} \
   --log-straggler \
   --disable-straggler-on-startup \
+  --tensorboard-dir ${TENSORBOARD_DIR} \
+  --torch-profile \
+  --torch-profile-wait 0 \
+  --torch-profile-warmup 1 \
+  --torch-profile-active 1 \
+  --torch-profile-repeat 1 \
+  --torch-profile-skip-first 1 \
+  --torch-profile-profile-memory \
+  --torch-profile-with-stack \
+  --torch-profile-with-flops \
+  --torch-profile-with-modules \
   --wandb-name ${JOB_NAME} \
   --wandb-project "Llama-3.1-8B" \
   --wandb-entity "okoge"

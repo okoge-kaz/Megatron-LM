@@ -45,6 +45,7 @@ def parse_args(extra_args_provider=None, ignore_unknown_args=False):
     parser = _add_transformer_engine_args(parser)
     parser = _add_retro_args(parser)
     parser = _add_experimental_args(parser)
+    parser = _add_torch_profiler_args(parser)
 
     # Custom arguments.
     if extra_args_provider is not None:
@@ -1738,5 +1739,26 @@ def _add_experimental_args(parser):
                        '`transformer_block.py`, or `transformer_layer.py`')
     group.add_argument('--yaml-cfg', type=str, default=None,
                        help = 'Config file to add additional arguments')
+
+    return parser
+
+def _add_torch_profiler_args(parser):
+    group = parser.add_argument_group(title='torch profiler')
+
+    group.add_argument('--torch-profile', action='store_true', help='Enable torch profiler')
+    group.add_argument('--torch-profile-ranks', nargs='+', type=int, default=[0], help='Global ranks to profile')
+    group.add_argument('--torch-profile-wait', type=int, default=0, help='Steps to wait before profiling')
+    group.add_argument('--torch-profile-warmup', type=int, default=1, help='Warmup steps before profiling')
+    group.add_argument('--torch-profile-active', type=int, default=1, help='Steps to profile')
+    group.add_argument('--torch-profile-repeat', type=int, default=1, help='Repeta profiling this number of times')
+    group.add_argument('--torch-profile-skip-first', type=int, default=1, help='Number of iterations to skip before profiling')
+    group.add_argument('--torch-profile-record-shapes', action='store_true',
+                       help='Save information about operator’s input shapes')
+    group.add_argument('--torch-profile-profile-memory', action='store_true',
+                       help='Track tensor memory allocation/deallocation')
+    group.add_argument('--torch-profile-with-stack', action='store_true',
+                       help='Record source information for the ops')
+    group.add_argument('--torch-profile-with-flops', action='store_true', help='Use formula to estimate the FLOPs')
+    group.add_argument('--torch-profile-with-modules', action='store_true', help='Record module hierarchy ')
 
     return parser
