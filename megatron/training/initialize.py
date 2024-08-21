@@ -10,6 +10,7 @@ import time
 
 import numpy as np
 import torch
+import torch.distributed as torch_distributed
 from datetime import timedelta
 
 from megatron.legacy import fused_kernels

@@ -81,6 +81,7 @@ def parse_args(extra_args_provider=None, ignore_unknown_args=False):
 
     args.rank = int(os.getenv('RANK', '0'))
     args.world_size = int(os.getenv("WORLD_SIZE", '1'))
+    args.local_rank = int(os.getenv('LOCAL_RANK', '0'))
 
     return args
 
@@ -842,7 +843,7 @@ def _add_network_size_args(parser):
     group.add_argument('--use-rotary-position-embeddings', action='store_true',
                        help='Use rotary positional embeddings or not. '
                        'Deprecated: use --position-embedding-type')
-    group.add_argument('--rotary-base', type=int, default=10000,
+    group.add_argument('--rotary-base', type=float, default=10000,
                        help='Base to use for rotary positional embeddings, default 10000')
     group.add_argument('--rotary-percent', type=float, default=1.0,
                        help='Percent of rotary dimension to use, default 100%%')
