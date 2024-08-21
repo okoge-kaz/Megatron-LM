@@ -10,6 +10,7 @@ import numpy as np
 from time import time
 
 import torch
+import torch.distributed as torch_distributed
 
 from megatron.core import mpu, tensor_parallel, dist_checkpointing
 from megatron.core.dist_checkpointing.mapping import ShardedObject
@@ -153,6 +154,7 @@ def find_checkpoint_rank_0(checkpoints_path, iteration, release=False):
     parallelism is present, we need to look for both naming schemes if
     we don't know if the checkpoint has pipeline or expert parallelism.
     """
+    print_rank_0(f"checkpoint path: {checkpoints_path}, iteration: {iteration}")
 
     # Look for checkpoint with no pipelining and no expert parallelism
     filename = get_checkpoint_name(checkpoints_path, iteration, release,
@@ -229,16 +231,18 @@ def read_metadata(tracker_filename):
         tracker_filename)
 
     # Get the max iteration retrieved across the ranks.
-    if torch.distributed.is_initialized():
-        iters_cuda = torch.tensor([iteration], dtype=torch.long, device='cuda')
-        torch.distributed.all_reduce(iters_cuda, op=torch.distributed.ReduceOp.MAX)
+    if torch_distributed.is_initialized():
+        local_rank = torch_distributed.get_rank() % torch.cuda.device_count()
+        device = torch.device(f"cuda:{local_rank}")
+        iters_cuda = torch.tensor([iteration], dtype=torch.long, device=device)
+        torch_distributed.all_reduce(iters_cuda, op=torch_distributed.ReduceOp.MAX)
         max_iter = iters_cuda[0].item()
 
         # We should now have all the same iteration.
         # If not, print a warning and chose the maximum
         # iteration across all ranks.
         if iteration != max_iter:
-            rank = torch.distributed.get_rank()
+            rank = torch_distributed.get_rank()
             print('WARNING: on rank {} found iteration {} in the '
                   'metadata while max iteration across the ranks '
                   'is {}, replacing it with max iteration.'.format(
@@ -316,7 +320,12 @@ def save_checkpoint(iteration, model, optimizer, opt_param_scheduler, num_floati
     if args.use_distributed_optimizer and not args.no_save_optim and optimizer is not None and not args.use_dist_ckpt:
         optim_checkpoint_name = \
             get_distributed_optimizer_checkpoint_name(checkpoint_name)
-        ensure_directory_exists(optim_checkpoint_name)
+        try:
+            ensure_directory_exists(optim_checkpoint_name)
+        except Exception as e:
+            print(f"rank={torch_distributed.get_rank()} failed to create directory for distributed optimizer checkpoint: {e}")
+            exit(1)
+
         optimizer.save_parameter_state(optim_checkpoint_name)
 
     async_save_request = None
@@ -434,6 +443,7 @@ def generate_state_dict(args, model, optimizer, opt_param_scheduler,
     state_dict['checkpoint_version'] = 3.0
     if iteration is not None:
         state_dict['iteration'] = iteration
+    state_dict['tokens'] = args.consumed_train_tokens
 
     if len(model) == 1:
         state_dict['model'] = (model[0].sharded_state_dict()
@@ -664,6 +674,8 @@ def load_args_from_checkpoint(args, load_arg='load',
     checkpoint_args = state_dict['args']
     checkpoint_version = state_dict.get('checkpoint_version', 0)
     args.iteration = state_dict['iteration']
+    if 'tokens' in state_dict:
+        args.consumed_train_tokens = state_dict['tokens']
 
     # One-off conversion for foundation models
     if hasattr(checkpoint_args, 'disable_bias_linear'):
@@ -698,6 +710,7 @@ def load_args_from_checkpoint(args, load_arg='load',
     _set_arg('use_rotary_position_embeddings', force=True)
     _set_arg('rotary_percent', force=True)
     _set_arg('rotary_interleaved', force=True)
+    _set_arg('rope_theta', force=True)
     _set_arg('add_bias_linear', force=True)
     _set_arg('add_qkv_bias', force=True)
     _set_arg('swiglu', force=True)
@@ -735,7 +748,6 @@ def load_checkpoint(model, optimizer, opt_param_scheduler, load_arg='load', stri
         if not checkpoint_exists(load_dir):
             raise FileNotFoundError("No checkpoint found in load directory or pretrained directory")
         args.finetune = True
-
 
     model = unwrap_model(model)
 

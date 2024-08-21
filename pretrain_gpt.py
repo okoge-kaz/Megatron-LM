@@ -35,6 +35,7 @@ from megatron.core.models.gpt.gpt_layer_specs import (
 
 stimer = StragglerDetector()
 
+
 def model_provider(pre_process=True, post_process=True) -> Union[GPTModel, megatron.legacy.model.GPTModel]:
     """Builds the model.
 
@@ -87,7 +88,14 @@ def model_provider(pre_process=True, post_process=True) -> Union[GPTModel, megat
             share_embeddings_and_output_weights=not args.untie_embeddings_and_output_weights,
             position_embedding_type=args.position_embedding_type,
             rotary_percent=args.rotary_percent,
-            rotary_base=args.rotary_base
+            rotary_base=args.rotary_base,
+            use_embedding_scaling=args.use_embedding_scaling,
+            rope_scaling={
+                "factor": args.rope_factor,
+                "low_freq_factor": args.rope_low_freq_factor,
+                "high_freq_factor": args.rope_high_freq_factor,
+                "original_max_positional_embeddings": args.rope_original_max_positional_embeddings,
+            } if args.rope_factor is not None else None
         )
 
     return model

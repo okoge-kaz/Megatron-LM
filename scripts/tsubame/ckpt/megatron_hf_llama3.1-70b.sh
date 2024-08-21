@@ -1,0 +1,54 @@
+#!/bin/sh
+#$ -cwd
+#$ -l node_f=1
+#$ -l h_rt=1:00:00
+#$ -o outputs/convert/megatron_hf/$JOB_ID.log
+#$ -e outputs/convert/megatron_hf/$JOB_ID.log
+#$ -p -3
+
+# Load modules
+module use /gs/fs/tga-NII-LLM/modules/modulefiles
+
+module load ylab/cuda/12.1
+module load ylab/cudnn/8.9.7
+module load ylab/nccl/cuda-12.2/2.20.5
+module load ylab/hpcx/2.17.1
+module load ninja/1.11.1
+
+# switch virtual env
+source .env/bin/activate
+
+# distributed settings
+TENSOR_PARALLEL_SIZE=4
+PIPELINE_PARALLEL_SIZE=8
+ITERATION=5000
+FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
+
+# model config
+MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/Llama-3.1-70B/tp4-pp8-ct1-LR1.0E-5-MINLR1.0E-6-WD0.1
+HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3.1-70b/LR1.0E-5-MINLR1.0E-6-WD0.1/iter_${FORMATTED_ITERATION}
+
+mkdir -p ${HF_CHECKPOINT_DIR}
+
+CURRENT_ITERATION=$(cat "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt")
+
+echo $ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
+
+# tokenizer config
+TOKENIZER_MODEL_DIR=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3.1-70B
+
+# convert
+python tools/checkpoint/convert.py \
+  --model-type GPT \
+  --loader mcore \
+  --saver llama3_hf \
+  --load-dir ${MEGATRON_CHECKPOINT_DIR} \
+  --save-dir ${HF_CHECKPOINT_DIR} \
+  --hf-tokenizer-path ${TOKENIZER_MODEL_DIR} \
+  --save-dtype bfloat16 \
+  --loader-transformer-impl transformer_engine \
+  --llama-3-1 \
+  --megatron-path /gs/bs/tga-bayes-crest/fujii/Megatron-LM
+
+# change checkpoint iteration
+echo $CURRENT_ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
