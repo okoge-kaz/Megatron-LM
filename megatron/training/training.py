@@ -905,7 +905,7 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
 
         from megatron.training.utils import throughput_calculator
 
-        samples_per_sec, tflops, samples_per_model, model_replica_count = throughput_calculator(
+        samples_per_sec = throughput_calculator(
             args=args, iteration_time=elapsed_time, total_iterations=total_iterations
         )
         # Compute throughput.
