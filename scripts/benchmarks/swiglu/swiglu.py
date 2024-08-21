@@ -57,11 +57,11 @@ def benchmark_bmm(b, m, n, k, num_iterations=100, num_matmuls=1):
 
     for i in range(num_warmup_iterations + num_iterations):
         if i == num_warmup_iterations:
-            start_event.record()
+            start_event.record()  # type: ignore
         with torch.no_grad():
             for i in range(num_matmuls):
                 torch.bmm(A, B, out=C)
-    end_event.record()
+    end_event.record()  # type: ignore
     torch.cuda.synchronize()
     elapsed_time = start_event.elapsed_time(end_event) / (1000 * num_iterations)
     flops_per_sec = (2 * b * m * n * k * num_matmuls) / (elapsed_time * 10**12)
