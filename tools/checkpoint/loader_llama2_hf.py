@@ -65,9 +65,9 @@ def load_args_from_checkpoint(args):
         args.num_query_groups = llama_args["num_key_value_heads"]
 
     if "rope_theta" in llama_args:
-        args.rope_theta = llama_args["rope_theta"]
+        args.rotary_base = llama_args["rope_theta"]
     else:
-        args.rope_theta = 10000
+        args.rotary_base = 10000
 
 
 def set_preprocess_state(args, model, hf_model):
@@ -282,7 +282,7 @@ def _load_checkpoint(queue, args):
     md.checkpoint_args = margs
     md.consumed_train_samples = 0
     md.consumed_valid_samples = 0
-    md.rope_theta = margs.rope_theta
+    md.rotary_base = margs.rotary_base
 
     # Get first pipe stage.
     mpu.set_tensor_model_parallel_rank(0)

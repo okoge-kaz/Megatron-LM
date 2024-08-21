@@ -231,7 +231,7 @@ def _load_checkpoint(queue, args):
     md.make_vocab_size_divisible_by = margs.make_vocab_size_divisible_by
     md.checkpoint_args = checkpoint_args
     md.use_legacy_models = margs.use_legacy_models
-    md.rope_theta = margs.rope_theta
+    md.rotary_base = margs.rotary_base
 
     # Get transformer block (named either 'encoder' or 'decoder').
     transformer_block_key = get_mcore_transformer_block_key(md.model_type)

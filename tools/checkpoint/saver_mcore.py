@@ -379,7 +379,7 @@ def save_checkpoint(queue, args):
                 '--no-save-optim',
                 '--no-save-rng',
                 '--no-initialization',
-                '--rope-theta', str(md.rope_theta),
+                '--rotary-base', str(md.rotary_base),
                 '--save-interval', '1',
                 '--save', args.save_dir
                 ]
