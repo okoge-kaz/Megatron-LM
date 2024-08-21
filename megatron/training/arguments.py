@@ -79,6 +79,7 @@ def parse_args(extra_args_provider=None, ignore_unknown_args=False):
 
     args.rank = int(os.getenv('RANK', '0'))
     args.world_size = int(os.getenv("WORLD_SIZE", '1'))
+    args.local_rank = int(os.getenv('LOCAL_RANK', '0'))
 
     return args
 
