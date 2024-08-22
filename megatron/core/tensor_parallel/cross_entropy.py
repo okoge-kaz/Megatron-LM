@@ -22,7 +22,9 @@ class VocabParallelCrossEntropy:
     """
 
     @staticmethod
-    def forward(ctx, vocab_parallel_logits, target, label_smoothing=0.0, args: Optional[argparse.Namespace] = None,):
+    def calculate_logits_max(
+        vocab_parallel_logits: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
 
         vocab_parallel_logits = vocab_parallel_logits.float()
         # Maximum value along vocab dimension across all GPUs.
@@ -117,7 +119,7 @@ class VocabParallelCrossEntropy:
 
 class _VocabParallelCrossEntropy(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, vocab_parallel_logits, target, label_smoothing=0.0):
+    def forward(ctx, vocab_parallel_logits, target, label_smoothing=0.0, args: Optional[argparse.Namespace] = None):
 
         vocab_parallel_logits, logits_max = VocabParallelCrossEntropy.calculate_logits_max(
             vocab_parallel_logits
