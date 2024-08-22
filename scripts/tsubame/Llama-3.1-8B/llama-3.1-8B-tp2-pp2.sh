@@ -1,10 +1,10 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=2
-#$ -l h_rt=00:2:00:00
+#$ -l h_rt=00:1:00:00
 #$ -o outputs/Llama-3.1-8b/$JOB_ID.log
 #$ -e outputs/Llama-3.1-8b/$JOB_ID.log
-#$ -p -4
+#$ -p -3
 
 # Load modules
 module use /gs/fs/tga-NII-LLM/modules/modulefiles
@@ -70,7 +70,7 @@ GRAD_CLIP=1
 
 # model config
 TOKENIZER_MODEL=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3.1-8B/tokenizer.json
-CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-v0.8
 CHECKPOINT_SAVE_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
@@ -401,7 +401,7 @@ mpirun -np $NUM_GPUS \
   --untie-embeddings-and-output-weights \
   --no-position-embedding \
   --position-embedding-type rope \
-  --rope-theta 500000.0 \
+  --rotary-base 500000.0 \
   --rope-factor 8.0 \
   --rope-low-freq-factor 1.0 \
   --rope-high-freq-factor 4.0 \
@@ -423,17 +423,6 @@ mpirun -np $NUM_GPUS \
   ${TIMER_ARGS} \
   --log-straggler \
   --disable-straggler-on-startup \
-  --tensorboard-dir ${TENSORBOARD_DIR} \
-  --torch-profile \
-  --torch-profile-wait 0 \
-  --torch-profile-warmup 1 \
-  --torch-profile-active 1 \
-  --torch-profile-repeat 1 \
-  --torch-profile-skip-first 1 \
-  --torch-profile-profile-memory \
-  --torch-profile-with-stack \
-  --torch-profile-with-flops \
-  --torch-profile-with-modules \
   --wandb-name ${JOB_NAME} \
   --wandb-project "Llama-3.1-8B" \
   --wandb-entity "okoge"
