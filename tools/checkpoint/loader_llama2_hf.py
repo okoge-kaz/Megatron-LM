@@ -207,7 +207,7 @@ def _load_checkpoint(queue, args):
 
     margs = validate_args(margs)
 
-    margs.use_mcore_models = False
+    margs.use_legacy_models = True
     margs.transformer_impl = args.loader_transformer_impl
     if args.loader_transformer_impl == 'transformer_engine':
         margs.attention_softmax_in_fp32 = True

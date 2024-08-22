@@ -1,9 +1,9 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=1
-#$ -l h_rt=2:00:00
-#$ -o outputs/convert/hf_megatron/$JOB_ID.log
-#$ -e outputs/convert/hf_megatron/$JOB_ID.log
+#$ -l h_rt=1:00:00
+#$ -o outputs/convert/megatron_hf/$JOB_ID.log
+#$ -e outputs/convert/megatron_hf/$JOB_ID.log
 #$ -p -5
 
 # Load modules
@@ -22,14 +22,12 @@ source .env/bin/activate
 TENSOR_PARALLEL_SIZE=2
 PIPELINE_PARALLEL_SIZE=2
 
-ITERATION=2500
+ITERATION=1
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
-EXPERIMENT=datacom-lm
-
 # model config
-MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b/${EXPERIMENT}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
-HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3.1-8b/${EXPERIMENT}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
+MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-v0.8
+HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3.1-8b-v0.8/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1/iter_${FORMATTED_ITERATION}
 
 mkdir -p ${HF_CHECKPOINT_DIR}
 
@@ -51,7 +49,7 @@ python tools/checkpoint/convert.py \
   --save-dtype bfloat16 \
   --loader-transformer-impl transformer_engine \
   --llama-3-1 \
-  --megatron-path /gs/bs/tga-bayes-crest/fujii/Megatron-LM
+  --megatron-path /gs/bs/tga-NII-LLM/src/Megatron-LM-v0.8
 
 # change checkpoint iteration
 echo $CURRENT_ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"

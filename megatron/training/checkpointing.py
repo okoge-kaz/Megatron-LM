@@ -11,6 +11,7 @@ from time import time
 
 import torch
 import torch.distributed as torch_distributed
+import torch.distributed
 
 from megatron.core import mpu, tensor_parallel, dist_checkpointing
 from megatron.core.dist_checkpointing.mapping import ShardedObject
@@ -432,7 +433,8 @@ def save_checkpoint(iteration, model, optimizer, opt_param_scheduler, num_floati
         torch.distributed.barrier()
 
     end_misc = time()
-    logger.debug(f"rank: {torch.distributed.get_rank()}, takes {end_misc - start_misc} to finalize ckpt save ")
+    if torch.distributed.is_initialized():
+        logger.debug(f"rank: {torch.distributed.get_rank()}, takes {end_misc - start_misc} to finalize ckpt save ")
 
 def generate_state_dict(args, model, optimizer, opt_param_scheduler,
                         rng_state, use_dist_ckpt=False, iteration=None,
