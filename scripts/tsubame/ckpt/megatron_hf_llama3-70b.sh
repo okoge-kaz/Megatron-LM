@@ -30,7 +30,7 @@ for ITERATION in $(seq $START_ITERATION 250 $END_ITERATION); do
 
   # model config
   MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/Llama-3-70B/exp6-fp8/tp4-pp8-ct1-LR1.0E-5-MINLR1.0E-6-WD0.1
-  HF_CHECKPOINT_DIR=/gs/bs/tgh-NII-LLM/checkpoints/megatron-to-hf/Llama-3-70b-hf/exp6-fp8/LR1.0E-5-MINLR1.0E-6-WD0.1/iter_${FORMATTED_ITERATION}
+  HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3-70b-hf/exp6-fp8/LR1.0E-5-MINLR1.0E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
   mkdir -p ${HF_CHECKPOINT_DIR}
 
