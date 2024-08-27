@@ -150,10 +150,10 @@ mpirun -np $NUM_GPUS \
   -x MASTER_ADDR=$MASTER_ADDR \
   -x MASTER_PORT=$MASTER_PORT \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
+  -x NCCL_IB_TIMEOUT=22 \
   -x LD_LIBRARY_PATH \
   -x PATH \
   -bind-to none \
-  -x PATH \
   python pretrain_gpt.py \
   --tensor-model-parallel-size ${TENSOR_PARALLEL_SIZE} \
   ${PIPELINE_ARGS} \
@@ -179,7 +179,7 @@ mpirun -np $NUM_GPUS \
   ${CHECKPOINT_ARGS} \
   --save ${CHECKPOINT_SAVE_DIR} \
   --data-path ${TRAIN_DATA_PATH} \
-  --split 998,1,1 \
+  --split 990,10,0 \
   --distributed-backend nccl \
   --lr ${LR} \
   --min-lr ${MIN_LR} \
@@ -216,8 +216,6 @@ mpirun -np $NUM_GPUS \
   --hidden-dropout 0.0 \
   --swiglu \
   --use-flash-attn \
-  --recompute-activations \
-  --recompute-granularity "selective" \
   --attention-softmax-in-fp32 \
   --accumulate-allreduce-grads-in-fp32 \
   --transformer-impl "transformer_engine" \
@@ -225,5 +223,5 @@ mpirun -np $NUM_GPUS \
   --use-z-loss \
   ${TIMER_ARGS} \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "Llama-3.1-70B-TFLOPS" \
+  --wandb-project "Llama-3.1-70B" \
   --wandb-entity "prj-jalm"

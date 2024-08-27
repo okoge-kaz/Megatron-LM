@@ -142,6 +142,7 @@ mpirun -np $NUM_GPUS \
   -x MASTER_ADDR=$MASTER_ADDR \
   -x MASTER_PORT=$MASTER_PORT \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
+  -x NCCL_IB_TIMEOUT=22 \
   -x LD_LIBRARY_PATH \
   -x PATH \
   -bind-to none \
@@ -210,8 +211,6 @@ mpirun -np $NUM_GPUS \
   --hidden-dropout 0.0 \
   --swiglu \
   --use-flash-attn \
-  --recompute-activations \
-  --recompute-granularity "selective" \
   --attention-softmax-in-fp32 \
   --accumulate-allreduce-grads-in-fp32 \
   --transformer-impl "transformer_engine" \
