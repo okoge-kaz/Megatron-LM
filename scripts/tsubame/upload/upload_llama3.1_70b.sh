@@ -10,8 +10,8 @@ set -e
 
 source .env/bin/activate
 
-start=5000
-end=5000
+start=7500
+end=7500
 increment=1000
 
 base_dirs=(
