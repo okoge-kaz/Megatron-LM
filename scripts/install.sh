@@ -20,7 +20,7 @@ source .env/bin/activate
 
 # pip install
 pip install --upgrade pip
-pip install --upgrade setuptools wheel cmake ninja packaging
+pip install --upgrade wheel cmake ninja packaging
 
 pip install -r requirements.txt
 
@@ -32,7 +32,7 @@ pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation -
 
 # transformer engine
 # A100 1枚だと CPU memory 不足でエラーになる
-pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.7
+pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.9
 
 # flash-attention install
 git clone git@github.com:Dao-AILab/flash-attention.git
