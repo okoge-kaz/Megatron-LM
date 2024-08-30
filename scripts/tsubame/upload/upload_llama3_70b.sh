@@ -2,8 +2,8 @@
 
 set -e
 
-start=250
-end=6000
+start=11250
+end=12000
 increment=250
 
 

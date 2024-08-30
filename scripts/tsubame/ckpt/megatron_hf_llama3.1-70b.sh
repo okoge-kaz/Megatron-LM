@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=1
-#$ -l h_rt=15:00:00
+#$ -l h_rt=2:00:00
 #$ -o outputs/convert/megatron_hf/$JOB_ID.log
 #$ -e outputs/convert/megatron_hf/$JOB_ID.log
 #$ -p -3
@@ -22,8 +22,8 @@ source .env/bin/activate
 TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=8
 
-START_ITERATION=7000
-END_ITERATION=7500
+START_ITERATION=15000
+END_ITERATION=15000
 INCREMENT=500
 
 for ITERATION in $(seq $START_ITERATION $INCREMENT $END_ITERATION); do
