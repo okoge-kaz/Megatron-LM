@@ -408,7 +408,7 @@ mpirun -np $NUM_GPUS \
   --untie-embeddings-and-output-weights \
   --no-position-embedding \
   --position-embedding-type rope \
-  --rope-theta 500000.0 \
+  --rotary-base 500000.0 \
   --rope-factor 8.0 \
   --rope-low-freq-factor 1.0 \
   --rope-high-freq-factor 4.0 \

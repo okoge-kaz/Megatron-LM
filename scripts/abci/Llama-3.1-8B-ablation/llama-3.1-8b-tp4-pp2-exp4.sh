@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=16
-#$ -l h_rt=0:1:00:00
+#$ -l h_rt=3:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3.1-8b-ablation/
 #$ -cwd
@@ -218,13 +218,11 @@ mpirun -np $NUM_GPUS \
   --eval-interval 500 \
   --eval-iters 10 \
   --bf16 \
-  --no-initialization \
-  --exit-on-missing-checkpoint \
   --use-checkpoint-args \
   --untie-embeddings-and-output-weights \
   --no-position-embedding \
   --position-embedding-type rope \
-  --rope-theta 500000.0 \
+  --rotary-base 500000.0 \
   --rope-factor 8.0 \
   --rope-low-freq-factor 1.0 \
   --rope-high-freq-factor 4.0 \
