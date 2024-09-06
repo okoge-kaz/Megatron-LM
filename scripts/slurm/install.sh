@@ -35,5 +35,5 @@ pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.9
 # flash-attention install
 git clone git@github.com:Dao-AILab/flash-attention.git
 cd flash-attention
-git checkout v2.6.3
+git checkout v2.5.8
 pip install -e .
