@@ -2,7 +2,7 @@
 #SBATCH --job-name=Llama-3.1-8B
 #SBATCH --time=0:30:00
 #SBATCH --partition=h100
-#SBATCH --nodes 12
+#SBATCH --nodes 8
 #SBATCH --gpus-per-node=8
 #SBATCH --ntasks-per-node=8
 #SBATCH --output=outputs/Llama-3.1-8B/%x-%j.out
@@ -50,7 +50,7 @@ LAYERS_PER_VIRTUAL_PIPELINE_STAGE=$((${NUM_LAYERS} / ${PIPELINE_PARALLEL_SIZE} /
 
 # training config
 MICRO_BATCH_SIZE=2
-GLOBAL_BATCH_SIZE=1536
+GLOBAL_BATCH_SIZE=1024
 TRAIN_STEPS=25000
 LR_DECAY_ITERS=25000
 
@@ -63,7 +63,7 @@ GRAD_CLIP=1
 # model config
 TOKENIZER_MODEL=/home/kazuki_fujii/hf-checkpoints/Meta-Llama-3.1-8B/tokenizer.json
 CHECKPOINT_DIR=/home/kazuki_fujii/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/home/kazuki_fujii//checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}/${NUM_GPUS}-gpu
+CHECKPOINT_SAVE_DIR=/home/kazuki_fujii//checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}/${NUM_GPUS}-gpu-dist
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
@@ -187,6 +187,8 @@ mpirun -np $NUM_GPUS \
   --transformer-impl "transformer_engine" \
   --use-mpi \
   --use-z-loss \
+  --use-dist-ckpt \
+  --dist-ckpt-format torch_dist \
   ${TIMER_ARGS} \
   --log-straggler \
   --disable-straggler-on-startup \
