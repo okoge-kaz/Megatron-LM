@@ -5,8 +5,8 @@
 #SBATCH --nodes 1
 #SBATCH --gpus-per-node=8
 #SBATCH --ntasks-per-node=8
-#SBATCH --output=outputs/convert/%x-%j.out
-#SBATCH --error=outputs/convert/%x-%j.out
+#SBATCH --output=outputs/convert/hf-megatron/%x-%j.out
+#SBATCH --error=outputs/convert/hf-megatron/%x-%j.out
 
 # module load
 module load gc1/cuda/12.1
@@ -18,8 +18,8 @@ module load gc1/hpcx/2.18.1
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=4
-PIPELINE_PARALLEL_SIZE=8
+TENSOR_PARALLEL_SIZE=8
+PIPELINE_PARALLEL_SIZE=4
 
 # model config
 HF_CHECKPOINT_DIR=/home/kazuki_fujii/hf-checkpoints/Meta-Llama-3.1-70B

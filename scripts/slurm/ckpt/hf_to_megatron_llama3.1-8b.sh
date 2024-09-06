@@ -18,8 +18,8 @@ module load gc1/hpcx/2.18.1
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=2
-PIPELINE_PARALLEL_SIZE=2
+TENSOR_PARALLEL_SIZE=1
+PIPELINE_PARALLEL_SIZE=4
 
 # model config
 HF_CHECKPOINT_DIR=/home/kazuki_fujii/hf-checkpoints/Meta-Llama-3.1-8B
