@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=Llama-3.1-8B
-#SBATCH --time=0:30:00
+#SBATCH --job-name=Llama-3.1-70B
+#SBATCH --time=0:45:00
 #SBATCH --partition=h100
 #SBATCH --nodes 12
 #SBATCH --gpus-per-node=8
 #SBATCH --ntasks-per-node=8
-#SBATCH --output=outputs/Llama-3.1-8B/%x-%j.out
-#SBATCH --error=outputs/Llama-3.1-8B/%x-%j.out
+#SBATCH --output=outputs/Llama-3.1-70B/%x-%j.out
+#SBATCH --error=outputs/Llama-3.1-70B/%x-%j.out
 
 # module load
 module load gc1/cuda/12.1
@@ -31,17 +31,17 @@ NUM_NODES=$SLURM_JOB_NUM_NODES
 NUM_GPUS=$((${NUM_NODES} * ${NUM_GPU_PER_NODE}))
 
 # model config
-# llama-3.1-8b: https://huggingface.co/meta-llama/Meta-Llama-3.1-8B/blob/main/config.json
-HIDDEN_SIZE=4096
-FFN_HIDDEN_SIZE=14336 # intermediate size (HuggingFace)
-NUM_LAYERS=32
-NUM_HEADS=32
+# llama-3.1-70b: https://huggingface.co/meta-llama/Meta-Llama-3.1-70B/blob/main/config.json
+HIDDEN_SIZE=8192
+FFN_HIDDEN_SIZE=28672 # intermediate size (HuggingFace)
+NUM_LAYERS=80
+NUM_HEADS=64
 NUM_KEY_VALUE_HEADS=8
 SEQ_LENGTH=8192
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=2
-PIPELINE_PARALLEL_SIZE=2
+TENSOR_PARALLEL_SIZE=8
+PIPELINE_PARALLEL_SIZE=4
 CONTEXT_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
@@ -49,21 +49,21 @@ PIPLINE_MODEL_CHUNKS=1
 LAYERS_PER_VIRTUAL_PIPELINE_STAGE=$((${NUM_LAYERS} / ${PIPELINE_PARALLEL_SIZE} / ${PIPLINE_MODEL_CHUNKS}))
 
 # training config
-MICRO_BATCH_SIZE=2
+MICRO_BATCH_SIZE=1
 GLOBAL_BATCH_SIZE=1536
 TRAIN_STEPS=25000
 LR_DECAY_ITERS=25000
 
-LR=2.5E-5
-MIN_LR=2.5E-6
+LR=1.0E-5
+MIN_LR=1.0E-6
 LR_WARMUP_STEPS=1000
 WEIGHT_DECAY=0.1
 GRAD_CLIP=1
 
 # model config
-TOKENIZER_MODEL=/home/kazuki_fujii/hf-checkpoints/Meta-Llama-3.1-8B/tokenizer.json
-CHECKPOINT_DIR=/home/kazuki_fujii/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/home/kazuki_fujii//checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}/${NUM_GPUS}-gpu
+TOKENIZER_MODEL=/home/kazuki_fujii/hf-checkpoints/Meta-Llama-3.1-70B/tokenizer.json
+CHECKPOINT_DIR=/home/kazuki_fujii/checkpoints/hf-to-megatron/Llama-3.1-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+CHECKPOINT_SAVE_DIR=/home/kazuki_fujii/checkpoints/Llama-3.1-70B/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}-LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}/${NUM_GPUS}-gpu
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
@@ -73,8 +73,9 @@ TRAIN_DATA_PATH=""
 # ja wikipedia
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 3382423156 /home/kazuki_fujii/datasets/pretrain/binarized/llama3/ja_wiki_text_document"
 
+
 # job name
-JOB_NAME="Llama-3.1-8b-slurm-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
+JOB_NAME="Llama-3.1-70b-gaggle-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
 
 # checkpoint load
 if [[ -f "${CHECKPOINT_SAVE_DIR}/latest_checkpointed_iteration.txt" ]]; then
@@ -104,9 +105,6 @@ if [[ ${LOG_TIMER} == "True" ]]; then
   TIMER_ARGS="${TIMER_ARGS} --timing-log-level 2"
 fi
 
-# pytorch profiler
-TENSORBOARD_DIR="${CHECKPOINT_SAVE_DIR}/tensorboard"
-
 # run
 mpirun -np $NUM_GPUS \
   --npernode $NUM_GPU_PER_NODE \
@@ -125,6 +123,7 @@ mpirun -np $NUM_GPUS \
   --use-distributed-optimizer \
   --overlap-grad-reduce \
   --overlap-param-gather \
+  --distributed-timeout-minutes 15 \
   --num-layers ${NUM_LAYERS} \
   --hidden-size ${HIDDEN_SIZE} \
   --ffn-hidden-size ${FFN_HIDDEN_SIZE} \
@@ -162,8 +161,6 @@ mpirun -np $NUM_GPUS \
   --eval-interval 500 \
   --eval-iters 10 \
   --bf16 \
-  --no-initialization \
-  --exit-on-missing-checkpoint \
   --use-checkpoint-args \
   --untie-embeddings-and-output-weights \
   --no-position-embedding \
@@ -188,8 +185,6 @@ mpirun -np $NUM_GPUS \
   --use-mpi \
   --use-z-loss \
   ${TIMER_ARGS} \
-  --log-straggler \
-  --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
   --wandb-project "gaggle" \
   --wandb-entity "okoge"

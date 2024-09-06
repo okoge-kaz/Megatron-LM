@@ -17,6 +17,8 @@ dataset/wikipedia/*
 scripts/deepspeed/hostfile/*
 !scripts/deepspeed/hostfile/.gitkeep
 
+.env_pytorch
+
 # dependncies
 apex/
 triton/
