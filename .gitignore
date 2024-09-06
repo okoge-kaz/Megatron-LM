@@ -51,7 +51,6 @@ config.json
 
 .coverage_*
 *~
-slurm*
 logs
 
 
