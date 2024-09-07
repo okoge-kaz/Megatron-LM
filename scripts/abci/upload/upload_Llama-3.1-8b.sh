@@ -2,11 +2,11 @@
 
 set -e
 
-start=12500
-end=12500
+start=2500
+end=10000
 increment=2500
 
-EXP=exp4
+EXP=exp5
 
 upload_base_dir=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b-ablation/${EXP}/tp4-pp2-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1
 
