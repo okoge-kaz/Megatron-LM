@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=Llama-3.1-8B
-#SBATCH --time=0:30:00
+#SBATCH --time=3:00:00
 #SBATCH --partition=h100
-#SBATCH --nodes 8
+#SBATCH --nodes 4
 #SBATCH --gpus-per-node=8
 #SBATCH --ntasks-per-node=8
 #SBATCH --output=outputs/Llama-3.1-8B/%x-%j.out
@@ -105,7 +105,8 @@ if [[ ${LOG_TIMER} == "True" ]]; then
 fi
 
 # pytorch profiler
-TENSORBOARD_DIR="${CHECKPOINT_SAVE_DIR}/tensorboard"
+TENSORBOARD_DIR="${CHECKPOINT_SAVE_DIR}/tensorboard/fp8"
+mkdir -p ${TENSORBOARD_DIR}
 
 # run
 mpirun -np $NUM_GPUS \
@@ -136,6 +137,7 @@ mpirun -np $NUM_GPUS \
   --use-distributed-optimizer \
   --overlap-grad-reduce \
   --overlap-param-gather \
+  --distributed-timeout-minutes 30 \
   --num-layers ${NUM_LAYERS} \
   --hidden-size ${HIDDEN_SIZE} \
   --ffn-hidden-size ${FFN_HIDDEN_SIZE} \
@@ -200,6 +202,14 @@ mpirun -np $NUM_GPUS \
   --use-z-loss \
   ${TIMER_ARGS} \
   --fp8-format 'hybrid' \
+  --torch-profile \
+  --torch-profile-active 2 \
+  --torch-profile-record-shapes \
+  --torch-profile-profile-memory \
+  --torch-profile-with-stack \
+  --torch-profile-with-flops \
+  --torch-profile-with-modules \
+  --tensorboard-dir ${TENSORBOARD_DIR} \
   --log-straggler \
   --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \

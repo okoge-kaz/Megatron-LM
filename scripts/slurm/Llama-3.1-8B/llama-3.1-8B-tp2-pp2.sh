@@ -2,7 +2,7 @@
 #SBATCH --job-name=Llama-3.1-8B
 #SBATCH --time=0:30:00
 #SBATCH --partition=h100
-#SBATCH --nodes 8
+#SBATCH --nodes 4
 #SBATCH --gpus-per-node=8
 #SBATCH --ntasks-per-node=8
 #SBATCH --output=outputs/Llama-3.1-8B/%x-%j.out
@@ -63,7 +63,7 @@ GRAD_CLIP=1
 # model config
 TOKENIZER_MODEL=/home/kazuki_fujii/hf-checkpoints/Meta-Llama-3.1-8B/tokenizer.json
 CHECKPOINT_DIR=/home/kazuki_fujii/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/home/kazuki_fujii//checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}/${NUM_GPUS}-gpu-dist
+CHECKPOINT_SAVE_DIR=/home/kazuki_fujii//checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}/${NUM_GPUS}-gpu
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
@@ -105,7 +105,8 @@ if [[ ${LOG_TIMER} == "True" ]]; then
 fi
 
 # pytorch profiler
-TENSORBOARD_DIR="${CHECKPOINT_SAVE_DIR}/tensorboard"
+TENSORBOARD_DIR="${CHECKPOINT_SAVE_DIR}/tensorboard/bf16"
+mkdir -p ${TENSORBOARD_DIR}
 
 # run
 mpirun -np $NUM_GPUS \
@@ -156,7 +157,7 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --log-interval 1 \
-  --save-interval 10 \
+  --save-interval 500 \
   --no-initialization \
   --exit-on-missing-checkpoint \
   --eval-interval 500 \
@@ -188,6 +189,14 @@ mpirun -np $NUM_GPUS \
   --use-mpi \
   --use-z-loss \
   --use-dist-ckpt \
+  --torch-profile \
+  --torch-profile-active 2 \
+  --torch-profile-record-shapes \
+  --torch-profile-profile-memory \
+  --torch-profile-with-stack \
+  --torch-profile-with-flops \
+  --torch-profile-with-modules \
+  --tensorboard-dir ${TENSORBOARD_DIR} \
   --dist-ckpt-format torch_dist \
   ${TIMER_ARGS} \
   --log-straggler \
