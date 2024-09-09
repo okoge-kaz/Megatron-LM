@@ -23,7 +23,7 @@ PIPELINE_PARALLEL_SIZE=2
 
 # model config
 HF_CHECKPOINT_DIR=/home/kazuki_fujii/hf-checkpoints/Meta-Llama-3.1-8B
-MEGATRON_CHECKPOINT_DIR=/home/kazuki_fujii/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+MEGATRON_CHECKPOINT_DIR=/home/kazuki_fujii/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-TE-v1.6.0
 
 mkdir -p ${MEGATRON_CHECKPOINT_DIR}
 
