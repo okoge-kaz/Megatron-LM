@@ -70,7 +70,7 @@ GRAD_CLIP=1
 
 # model config
 TOKENIZER_MODEL=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3.1-8B/tokenizer.json
-CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-v0.8
+CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-v0.8-TE-v1.6
 CHECKPOINT_SAVE_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}-v0.8.0-te-v1.6
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
@@ -421,14 +421,6 @@ mpirun -np $NUM_GPUS \
   --transformer-impl "transformer_engine" \
   --use-mpi \
   --use-z-loss \
-  --torch-profile \
-  --torch-profile-active 2 \
-  --torch-profile-record-shapes \
-  --torch-profile-profile-memory \
-  --torch-profile-with-stack \
-  --torch-profile-with-flops \
-  --torch-profile-with-modules \
-  --tensorboard-dir ${TENSORBOARD_DIR} \
   ${TIMER_ARGS} \
   --log-straggler \
   --disable-straggler-on-startup \
