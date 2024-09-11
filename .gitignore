@@ -2,6 +2,7 @@ __pycache__
 .python-version
 .vscode/sftp.json
 helpers
+.env*
 
 *.err
 *.out
