@@ -23,20 +23,20 @@ TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=2
 
 # iteration settings
-START_ITERATION=10000
+START_ITERATION=12500
 END_ITERATION=12500
 STEP=2500
 
-EXP=exp7
+EXP=exp2
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-ablation/${EXP}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-qa/${EXP}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
 
 # tokenizer config
 TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B
 
 # hf checkpoint dir base
-HF_CHECKPOINT_DIR_BASE=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b-ablation/${EXP}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1
+HF_CHECKPOINT_DIR_BASE=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b-qa/${EXP}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1
 
 # iterate through specified iterations
 for ITERATION in $(seq $START_ITERATION $STEP $END_ITERATION); do

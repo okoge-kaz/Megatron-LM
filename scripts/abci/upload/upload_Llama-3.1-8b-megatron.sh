@@ -6,7 +6,7 @@ start=500
 end=12500
 increment=500
 
-EXP=exp5
+EXP=exp8
 
 upload_base_dir=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-ablation/${EXP}/tp4-pp2-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
 
