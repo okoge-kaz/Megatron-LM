@@ -47,7 +47,7 @@ PIPLINE_MODEL_CHUNKS=1
 LAYERS_PER_VIRTUAL_PIPELINE_STAGE=$((${NUM_LAYERS} / ${PIPELINE_PARALLEL_SIZE} / ${PIPLINE_MODEL_CHUNKS}))
 
 # training config
-MICRO_BATCH_SIZE=2
+MICRO_BATCH_SIZE=1
 GLOBAL_BATCH_SIZE=1024
 TRAIN_STEPS=25000
 LR_DECAY_ITERS=25000
@@ -195,16 +195,7 @@ mpirun -np $NUM_GPUS \
   --transformer-impl "transformer_engine" \
   --use-mpi \
   --use-z-loss \
-  --use-dist-ckpt \
-  --torch-profile \
-  --torch-profile-active 2 \
-  --torch-profile-record-shapes \
-  --torch-profile-profile-memory \
-  --torch-profile-with-stack \
-  --torch-profile-with-flops \
-  --torch-profile-with-modules \
   --tensorboard-dir ${TENSORBOARD_DIR} \
-  --dist-ckpt-format torch_dist \
   ${TIMER_ARGS} \
   --log-straggler \
   --disable-straggler-on-startup \
