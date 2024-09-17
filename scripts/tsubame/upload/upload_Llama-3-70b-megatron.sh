@@ -20,8 +20,8 @@ source .env/bin/activate
 
 set -e
 
-start=500
-end=1000
+start=11000
+end=11000
 increment=500
 
 export HF_HOME="/gs/bs/tga-NII-LLM/.cache"
