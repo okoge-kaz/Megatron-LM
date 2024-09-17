@@ -20,11 +20,11 @@ source .env/bin/activate
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=4
-PIPELINE_PARALLEL_SIZE=8
+PIPELINE_PARALLEL_SIZE=4
 
 # model config
 HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3.1-70B
-MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3.1-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3.1-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-v0.8
 
 mkdir -p ${MEGATRON_CHECKPOINT_DIR}
 

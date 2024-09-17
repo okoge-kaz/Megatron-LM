@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
-#$ -l node_f=8
-#$ -l h_rt=00:1:00:00
+#$ -l node_f=32
+#$ -l h_rt=00:0:30:00
 #$ -o outputs/Llama-3.1-8b-profile/$JOB_ID.log
 #$ -e outputs/Llama-3.1-8b-profile/$JOB_ID.log
 #$ -p -3
@@ -48,8 +48,8 @@ NUM_KEY_VALUE_HEADS=8
 SEQ_LENGTH=8192
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=2
-PIPELINE_PARALLEL_SIZE=2
+TENSOR_PARALLEL_SIZE=4
+PIPELINE_PARALLEL_SIZE=1
 CONTEXT_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
@@ -57,7 +57,7 @@ PIPLINE_MODEL_CHUNKS=1
 LAYERS_PER_VIRTUAL_PIPELINE_STAGE=$((${NUM_LAYERS} / ${PIPELINE_PARALLEL_SIZE} / ${PIPLINE_MODEL_CHUNKS}))
 
 # training config
-MICRO_BATCH_SIZE=2
+MICRO_BATCH_SIZE=4
 GLOBAL_BATCH_SIZE=1024
 TRAIN_STEPS=25000
 LR_DECAY_ITERS=25000
@@ -337,7 +337,8 @@ if [[ ${LOG_TIMER} == "True" ]]; then
 fi
 
 # pytorch profiler
-TENSORBOARD_DIR="${CHECKPOINT_SAVE_DIR}/tensorboard/bf16-te-v1.9"
+TENSORBOARD_DIR="/gs/fs/tgh-24IDU/tensorboard/bf16-te-v1.9/${NUM_NODES}-nodes"
+mkdir -p ${TENSORBOARD_DIR}
 
 # run
 mpirun -np $NUM_GPUS \
@@ -428,9 +429,10 @@ mpirun -np $NUM_GPUS \
   --torch-profile-with-stack \
   --torch-profile-with-flops \
   --torch-profile-with-modules \
+  --tensorboard-dir ${TENSORBOARD_DIR} \
   ${TIMER_ARGS} \
   --log-straggler \
   --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "gaggle" \
+  --wandb-project "GTC25" \
   --wandb-entity "okoge"

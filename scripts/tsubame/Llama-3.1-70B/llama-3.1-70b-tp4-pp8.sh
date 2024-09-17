@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=32
-#$ -l h_rt=06:23:50:00
+#$ -l h_rt=00:00:30:00
 #$ -o outputs/Llama-3.1-70b/$JOB_ID.log
 #$ -e outputs/Llama-3.1-70b/$JOB_ID.log
 #$ -p -5
@@ -48,7 +48,7 @@ NUM_KEY_VALUE_HEADS=8
 SEQ_LENGTH=8192
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=4 # fixed (tsubame has 4 GPUs per node)
+TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=8
 CONTEXT_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
@@ -70,8 +70,8 @@ GRAD_CLIP=1
 
 # model config
 TOKENIZER_MODEL=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3.1-70B/tokenizer.json
-CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3.1-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/gs/bs/tga-NII-LLM/Llama-3.1-70B/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}-LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
+CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3.1-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-v0.8
+CHECKPOINT_SAVE_DIR=/gs/bs/tga-NII-LLM/Llama-3.1-70B-tflops/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}-LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
@@ -337,6 +337,10 @@ if [[ ${LOG_TIMER} == "True" ]]; then
   TIMER_ARGS="${TIMER_ARGS} --timing-log-level 2"
 fi
 
+# pytorch profiler
+TENSORBOARD_DIR="/gs/fs/tgh-24IDU/tensorboard/bf16-te-v1.9/${NUM_NODES}-nodes"
+mkdir -p ${TENSORBOARD_DIR}
+
 # run
 mpirun -np $NUM_GPUS \
   --npernode $NUM_GPU_PER_NODE \
@@ -417,7 +421,15 @@ mpirun -np $NUM_GPUS \
   --transformer-impl "transformer_engine" \
   --use-mpi \
   --use-z-loss \
+  --torch-profile \
+  --torch-profile-active 2 \
+  --torch-profile-record-shapes \
+  --torch-profile-profile-memory \
+  --torch-profile-with-stack \
+  --torch-profile-with-flops \
+  --torch-profile-with-modules \
+  --tensorboard-dir ${TENSORBOARD_DIR} \
   ${TIMER_ARGS} \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "Llama-3.1-70B" \
-  --wandb-entity "prj-jalm"
+  --wandb-project "GTC25" \
+  --wandb-entity "okoge"
