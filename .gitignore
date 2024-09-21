@@ -18,6 +18,9 @@ dataset/wikipedia/*
 scripts/deepspeed/hostfile/*
 !scripts/deepspeed/hostfile/.gitkeep
 
+.env_pytorch
+.env_transformer_engine
+
 # dependncies
 apex/
 triton/
@@ -52,7 +55,6 @@ config.json
 
 .coverage_*
 *~
-slurm*
 logs
 
 

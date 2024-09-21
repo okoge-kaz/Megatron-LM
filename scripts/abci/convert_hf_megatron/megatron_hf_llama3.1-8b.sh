@@ -23,18 +23,20 @@ TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=2
 
 # iteration settings
-START_ITERATION=27500
-END_ITERATION=27500
+START_ITERATION=2500
+END_ITERATION=2500
 STEP=2500
 
+EXP=exp4
+
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-ablation/${EXP}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
 
 # tokenizer config
 TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B
 
 # hf checkpoint dir base
-HF_CHECKPOINT_DIR_BASE=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1
+HF_CHECKPOINT_DIR_BASE=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b-ablation/${EXP}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1
 
 # iterate through specified iterations
 for ITERATION in $(seq $START_ITERATION $STEP $END_ITERATION); do
@@ -58,7 +60,7 @@ for ITERATION in $(seq $START_ITERATION $STEP $END_ITERATION); do
     --save-dtype bfloat16 \
     --loader-transformer-impl transformer_engine \
     --llama-3-1 \
-    --megatron-path /bb/llm/gaf51275/2024/Megatron-LM-latest
+    --megatron-path /bb/llm/gaf51275/2024/Megatron-LM-v0.8
 
   # reset checkpoint iteration
   echo $CURRENT_ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
