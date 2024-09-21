@@ -3,7 +3,7 @@
 set -e
 
 start=2500
-end=12500
+end=5000
 increment=2500
 
 EXPERIMENT_NAME=exp10
