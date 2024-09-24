@@ -71,7 +71,7 @@ GRAD_CLIP=1
 # model config
 TOKENIZER_MODEL=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3-70B/tokenizer.json
 CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/tgh-24IDU/Llama-3-70B/exp6-fp8-cs/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}-LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
+CHECKPOINT_SAVE_DIR=/gs/bs/tgh-24IDU/Llama-3-70B/exp6-fp8-cs/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}-LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
@@ -201,7 +201,7 @@ mpirun -np $NUM_GPUS \
   --untie-embeddings-and-output-weights \
   --no-position-embedding \
   --position-embedding-type rope \
-  --rope-theta 500000.0 \
+  --rotary-base 500000.0 \
   --disable-bias-linear \
   --use-mcore-models \
   --normalization RMSNorm \
