@@ -1,9 +1,9 @@
 #!/bin/sh
 #$ -cwd
-#$ -l cpu_80=1
+#$ -l cpu_8=1
 #$ -l h_rt=24:00:00
-#$ -o outputs/upload/$JOB_ID.log
-#$ -e outputs/upload/$JOB_ID.log
+#$ -o outputs/upload/Llama-3.1-70B-megatron/$JOB_ID.log
+#$ -e outputs/upload/Llama-3.1-70B-megatron/$JOB_ID.log
 #$ -p -5
 
 # Load modules
@@ -18,15 +18,16 @@ module load ninja/1.11.1
 # swich virtual env
 source .env/bin/activate
 
-set -e
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 <start_iteration> <end_iteration>"
+  exit 1
+fi
 
-start=10250
-end=12500
-increment=250
+start=$1
+end=$2
+increment=500
 
-EXPERIMENT_NAME=exp6-fp8
-
-upload_base_dir=/gs/bs/tga-NII-LLM/Llama-3-70B/${EXPERIMENT_NAME}/tp4-pp8-ct1-LR1.0E-5-MINLR1.0E-6-WD0.1
+upload_base_dir=/gs/bs/tga-NII-LLM/Llama-3.1-70B/tp4-pp8-ct1-LR1.0E-5-MINLR1.0E-6-WD0.1
 
 upload_checkpoint() {
   local upload_dir=$1
@@ -53,7 +54,7 @@ upload_checkpoint() {
 
 for ((i = start; i <= end; i += increment)); do
   upload_dir=$upload_base_dir/iter_$(printf "%07d" $i)
-  repo_name="RioYokotaLab/Llama-3-70b-${EXPERIMENT_NAME}-LR1.0e-5-MINLR1.0E-6-WD0.1-iter$(printf "%07d" $i)"
+  repo_name="RioYokotaLab/Llama-3.1-70b-LR1.0e-5-MINLR1.0E-6-WD0.1-iter$(printf "%07d" $i)"
 
   if ! upload_checkpoint "$upload_dir" "$repo_name"; then
     echo "Skipping to next checkpoint after repeated failures for $repo_name"
