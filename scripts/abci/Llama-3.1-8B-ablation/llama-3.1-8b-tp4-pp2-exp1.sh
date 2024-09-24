@@ -1,8 +1,8 @@
 #!/bin/bash
-#$ -l rt_AF=32
-#$ -l h_rt=4:12:00:00
+#$ -l rt_AF=16
+#$ -l h_rt=5:00:00:00
 #$ -j y
-#$ -o outputs/Llama-3.1-8b/
+#$ -o outputs/Llama-3.1-8b-ablation/
 #$ -cwd
 
 # Load modules
@@ -11,10 +11,9 @@ module use /bb/llm/gaf51275/modules/modulefiles
 
 module load cuda/12.1/12.1.1
 module load cudnn/cuda-12.1/9.0.0
-module load nccl/2.17/2.17.1-1
+module load nccl/2.20.5
 module load hpcx/2.12
 module load gcc/11.4.0
-module load nccl-rdma-sharp-plugins/v2.5.x-4ccb98a
 
 set -e
 
@@ -61,9 +60,9 @@ LAYERS_PER_VIRTUAL_PIPELINE_STAGE=$((${NUM_LAYERS} / ${PIPELINE_PARALLEL_SIZE} /
 
 # training config
 MICRO_BATCH_SIZE=1
-GLOBAL_BATCH_SIZE=1024
-TRAIN_STEPS=27500
-LR_DECAY_ITERS=27500
+GLOBAL_BATCH_SIZE=512
+TRAIN_STEPS=12500
+LR_DECAY_ITERS=12500
 
 LR=2.5E-5
 MIN_LR=2.5E-6
@@ -74,7 +73,7 @@ GRAD_CLIP=1
 # model config
 TOKENIZER_MODEL=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B/tokenizer.json
 CHECKPOINT_DIR=/bb/llm/gaf51275/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
+CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-ablation/exp1/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
 
 echo ${CHECKPOINT_SAVE_DIR}
 
@@ -350,11 +349,6 @@ mpirun -np $NUM_GPUS \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
   -x NCCL_IB_TIMEOUT=22 \
   -x LD_LIBRARY_PATH \
-  -x NCCL_DEBUG=INFO \
-  -x NCCL_COLLNET_ENABLE=1 \
-  -x SHARP_COLL_LOCK_ON_COMM_INIT=1 \
-  -x SHARP_COLL_NUM_COLL_GROUP_RESOURCE_ALLOC_THRESHOLD=0 \
-  -x SHARP_COLL_LOG_LEVEL=3 \
   -x PATH \
   -bind-to none \
   python pretrain_gpt.py \
@@ -402,8 +396,6 @@ mpirun -np $NUM_GPUS \
   --eval-interval 500 \
   --eval-iters 10 \
   --bf16 \
-  --no-initialization \
-  --exit-on-missing-checkpoint \
   --use-checkpoint-args \
   --untie-embeddings-and-output-weights \
   --no-position-embedding \
@@ -431,5 +423,5 @@ mpirun -np $NUM_GPUS \
   --log-straggler \
   --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "Llama-3.1-8B" \
+  --wandb-project "Llama-3.1-8B-ablation" \
   --wandb-entity "prj-jalm"

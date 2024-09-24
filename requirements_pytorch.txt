@@ -1,0 +1,30 @@
+pybind11
+
+six
+regex
+numpy
+
+wandb
+tensorboard
+
+# mpirun
+mpi4py
+
+# tokenizer v2
+sentencepiece
+
+# tokenize
+nltk
+
+# flash-attn
+ninja
+packaging
+wheel
+
+# checkpoint convert
+transformers
+accelerate
+safetensors
+
+# transformer
+einops
