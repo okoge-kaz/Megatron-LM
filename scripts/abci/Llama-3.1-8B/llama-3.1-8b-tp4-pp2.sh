@@ -1,8 +1,8 @@
 #!/bin/bash
 #$ -l rt_AF=32
-#$ -l h_rt=4:12:00:00
+#$ -l h_rt=0:0:20:00
 #$ -j y
-#$ -o outputs/Llama-3.1-8b/
+#$ -o outputs/Llama-3.1-8b-tflops/
 #$ -cwd
 
 # Load modules
@@ -11,10 +11,9 @@ module use /bb/llm/gaf51275/modules/modulefiles
 
 module load cuda/12.1/12.1.1
 module load cudnn/cuda-12.1/9.0.0
-module load nccl/2.17/2.17.1-1
+module load nccl/2.20.5
 module load hpcx/2.12
 module load gcc/11.4.0
-module load nccl-rdma-sharp-plugins/v2.5.x-4ccb98a
 
 set -e
 
@@ -60,7 +59,7 @@ PIPLINE_MODEL_CHUNKS=1
 LAYERS_PER_VIRTUAL_PIPELINE_STAGE=$((${NUM_LAYERS} / ${PIPELINE_PARALLEL_SIZE} / ${PIPLINE_MODEL_CHUNKS}))
 
 # training config
-MICRO_BATCH_SIZE=1
+MICRO_BATCH_SIZE=2
 GLOBAL_BATCH_SIZE=1024
 TRAIN_STEPS=27500
 LR_DECAY_ITERS=27500
@@ -74,7 +73,7 @@ GRAD_CLIP=1
 # model config
 TOKENIZER_MODEL=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B/tokenizer.json
 CHECKPOINT_DIR=/bb/llm/gaf51275/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
+CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}-flops
 
 echo ${CHECKPOINT_SAVE_DIR}
 
@@ -341,6 +340,10 @@ if [[ ${LOG_TIMER} == "True" ]]; then
   TIMER_ARGS="${TIMER_ARGS} --timing-log-level 2"
 fi
 
+# pytorch profiler
+TENSORBOARD_DIR="${CHECKPOINT_SAVE_DIR}/tensorboard/${NUM_NODES}-nodes"
+mkdir -p ${TENSORBOARD_DIR}
+
 # run
 mpirun -np $NUM_GPUS \
   --npernode $NUM_GPU_PER_NODE \
@@ -350,11 +353,6 @@ mpirun -np $NUM_GPUS \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
   -x NCCL_IB_TIMEOUT=22 \
   -x LD_LIBRARY_PATH \
-  -x NCCL_DEBUG=INFO \
-  -x NCCL_COLLNET_ENABLE=1 \
-  -x SHARP_COLL_LOCK_ON_COMM_INIT=1 \
-  -x SHARP_COLL_NUM_COLL_GROUP_RESOURCE_ALLOC_THRESHOLD=0 \
-  -x SHARP_COLL_LOG_LEVEL=3 \
   -x PATH \
   -bind-to none \
   python pretrain_gpt.py \
@@ -427,9 +425,17 @@ mpirun -np $NUM_GPUS \
   --transformer-impl "transformer_engine" \
   --use-mpi \
   --use-z-loss \
+  --torch-profile \
+  --torch-profile-active 2 \
+  --torch-profile-record-shapes \
+  --torch-profile-profile-memory \
+  --torch-profile-with-stack \
+  --torch-profile-with-flops \
+  --torch-profile-with-modules \
+  --tensorboard-dir ${TENSORBOARD_DIR} \
   ${TIMER_ARGS} \
   --log-straggler \
   --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "Llama-3.1-8B" \
-  --wandb-entity "prj-jalm"
+  --wandb-project "GTC25" \
+  --wandb-entity "okoge"

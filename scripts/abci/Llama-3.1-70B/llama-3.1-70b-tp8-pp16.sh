@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -l rt_AF=32
-#$ -l h_rt=0:02:00:00
+#$ -l rt_AF=16
+#$ -l h_rt=0:00:30:00
 #$ -j y
 #$ -o outputs/Llama-3.1-70b/
 #$ -cwd
@@ -11,11 +11,9 @@ module use /bb/llm/gaf51275/modules/modulefiles
 
 module load cuda/12.1/12.1.1
 module load cudnn/cuda-12.1/9.0.0
-module load nccl/2.17/2.17.1-1
+module load nccl/2.20.5
 module load hpcx/2.12
 module load gcc/11.4.0
-module load nccl-rdma-sharp-plugins/v2.5.x-4ccb98a
-
 
 # swich virtual env
 source .env/bin/activate
@@ -144,6 +142,10 @@ if [[ ${LOG_TIMER} == "True" ]]; then
   TIMER_ARGS="${TIMER_ARGS} --timing-log-level 2"
 fi
 
+# pytorch profiler
+TENSORBOARD_DIR="${CHECKPOINT_SAVE_DIR}/tensorboard/${NUM_NODES}-nodes"
+mkdir -p ${TENSORBOARD_DIR}
+
 # run
 mpirun -np $NUM_GPUS \
   --npernode $NUM_GPU_PER_NODE \
@@ -153,11 +155,6 @@ mpirun -np $NUM_GPUS \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
   -x NCCL_IB_TIMEOUT=22 \
   -x LD_LIBRARY_PATH \
-  -x NCCL_DEBUG=INFO \
-  -x NCCL_COLLNET_ENABLE=1 \
-  -x SHARP_COLL_LOCK_ON_COMM_INIT=1 \
-  -x SHARP_COLL_NUM_COLL_GROUP_RESOURCE_ALLOC_THRESHOLD=0 \
-  -x SHARP_COLL_LOG_LEVEL=3 \
   -x PATH \
   -bind-to none \
   python pretrain_gpt.py \
@@ -210,7 +207,7 @@ mpirun -np $NUM_GPUS \
   --untie-embeddings-and-output-weights \
   --no-position-embedding \
   --position-embedding-type rope \
-  --rope-theta 500000.0 \
+  --rotary-base 500000.0 \
   --rope-factor 8.0 \
   --rope-low-freq-factor 1.0 \
   --rope-high-freq-factor 4.0 \
@@ -229,7 +226,15 @@ mpirun -np $NUM_GPUS \
   --transformer-impl "transformer_engine" \
   --use-mpi \
   --use-z-loss \
+  --torch-profile \
+  --torch-profile-active 2 \
+  --torch-profile-record-shapes \
+  --torch-profile-profile-memory \
+  --torch-profile-with-stack \
+  --torch-profile-with-flops \
+  --torch-profile-with-modules \
+  --tensorboard-dir ${TENSORBOARD_DIR} \
   ${TIMER_ARGS} \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "Llama-3.1-70B" \
-  --wandb-entity "prj-jalm"
+  --wandb-project "GTC25" \
+  --wandb-entity "okoge"
