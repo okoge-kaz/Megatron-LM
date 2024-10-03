@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -l rt_AF=32
-#$ -l h_rt=0:0:20:00
+#$ -l rt_AF=16
+#$ -l h_rt=0:0:30:00
 #$ -j y
 #$ -o outputs/Llama-3.1-8b-tflops/
 #$ -cwd
@@ -51,8 +51,8 @@ SEQ_LENGTH=8192
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=4
-PIPELINE_PARALLEL_SIZE=2
-CONTEXT_PARALLEL_SIZE=1
+PIPELINE_PARALLEL_SIZE=1
+CONTEXT_PARALLEL_SIZE=2
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
 PIPLINE_MODEL_CHUNKS=1
@@ -425,14 +425,6 @@ mpirun -np $NUM_GPUS \
   --transformer-impl "transformer_engine" \
   --use-mpi \
   --use-z-loss \
-  --torch-profile \
-  --torch-profile-active 2 \
-  --torch-profile-record-shapes \
-  --torch-profile-profile-memory \
-  --torch-profile-with-stack \
-  --torch-profile-with-flops \
-  --torch-profile-with-modules \
-  --tensorboard-dir ${TENSORBOARD_DIR} \
   ${TIMER_ARGS} \
   --log-straggler \
   --disable-straggler-on-startup \

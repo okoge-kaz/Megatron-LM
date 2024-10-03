@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l rt_AF=16
+#$ -l rt_AF=32
 #$ -l h_rt=0:00:30:00
 #$ -j y
 #$ -o outputs/Llama-3.1-70b/
