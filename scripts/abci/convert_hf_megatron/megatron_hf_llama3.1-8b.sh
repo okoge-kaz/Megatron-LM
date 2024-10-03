@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=1
-#$ -l h_rt=0:0:10:00
+#$ -l h_rt=0:1:00:00
 #$ -j y
 #$ -o outputs/megatron-to-hf/
 #$ -cwd
@@ -20,23 +20,27 @@ source .env/bin/activate
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=4
-PIPELINE_PARALLEL_SIZE=2
+PIPELINE_PARALLEL_SIZE=1
 
 # iteration settings
-START_ITERATION=12500
-END_ITERATION=12500
+START_ITERATION=1
+END_ITERATION=1
 STEP=2500
 
-EXP=exp2
+EXP=checkpoint-convert-test
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-qa/${EXP}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
 
 # tokenizer config
 TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B
 
 # hf checkpoint dir base
-HF_CHECKPOINT_DIR_BASE=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b-qa/${EXP}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1
+HF_CHECKPOINT_DIR_BASE=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b/${EXP}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+
+mkdir -p ${HF_CHECKPOINT_DIR_BASE}
+
+export CUDA_DEVICE_MAX_CONNECTIONS=1
 
 # iterate through specified iterations
 for ITERATION in $(seq $START_ITERATION $STEP $END_ITERATION); do
@@ -59,8 +63,9 @@ for ITERATION in $(seq $START_ITERATION $STEP $END_ITERATION); do
     --hf-tokenizer-path ${TOKENIZER_MODEL_DIR} \
     --save-dtype bfloat16 \
     --loader-transformer-impl transformer_engine \
-    --llama-3-1 \
-    --megatron-path /bb/llm/gaf51275/2024/Megatron-LM-v0.8
+    --true-vocab-size 128256 \
+    --megatron-path /bb/llm/gaf51275/2024/Megatron-LM-v0.8 \
+    --llama-3-1
 
   # reset checkpoint iteration
   echo $CURRENT_ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
