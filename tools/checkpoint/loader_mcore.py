@@ -184,6 +184,7 @@ def _load_checkpoint(queue, args):
     # Get true (non-padded) vocab size
     if args.true_vocab_size is not None:
         true_vocab_size = args.true_vocab_size
+        print(f"set true_vocab_size={args.true_vocab_size}", flush=True)
     elif args.vocab_file is not None:
         vocab = json.load(open(args.vocab_file))
         true_vocab_size = len(vocab)
@@ -227,7 +228,8 @@ def _load_checkpoint(queue, args):
     md.swiglu = margs.swiglu
     md.previous_tensor_parallel_size = margs.tensor_model_parallel_size
     md.previous_pipeline_parallel_size = margs.pipeline_model_parallel_size
-    md.true_vocab_size = true_vocab_size
+    if true_vocab_size is not None:
+        md.padded_vocab_size = true_vocab_size
     md.make_vocab_size_divisible_by = margs.make_vocab_size_divisible_by
     md.checkpoint_args = checkpoint_args
     md.use_legacy_models = margs.use_legacy_models
@@ -253,11 +255,15 @@ def _load_checkpoint(queue, args):
         queue.put(msg)
 
     # Send embeddings
+    embedding = torch.cat(
+        tensors=[models[tp_rank].embedding.word_embeddings.weight.data for tp_rank in range(tp_size)],
+        dim=0
+    )
+    print(f"DEBUG: embedding : {embedding.shape}", flush=True)
     message = {
-        "word embeddings": torch.cat(
-            [models[tp_rank].embedding.word_embeddings.weight.data for tp_rank in range(tp_size)],
-            dim = 0)
+        "word embeddings": embedding[:true_vocab_size, :]
     }
+    print(f"DEBUG: embedding (cut): {embedding[:true_vocab_size, :].shape}", flush=True)
     if md.position_embedding_type == 'learned_absolute':
         message["position embeddings"] = models[0].embedding.position_embeddings.weight.data
     else:
@@ -343,13 +349,16 @@ def _load_checkpoint(queue, args):
     queue_put("final norm", message)
 
     if md.output_layer:
+        lm_head = torch.cat(
+            tensors=[models[tp_rank].output_layer.weight.data for tp_rank in range(tp_size)],
+            dim=0
+        )
+        print(f"DEBUG: lm_head: {lm_head.shape}", flush=True)
         message = {
-            "weight": torch.cat(
-                [models[tp_rank].output_layer.weight.data for tp_rank in range(tp_size)],
-                dim = 0)
+            "weight": lm_head[:true_vocab_size, :]
         }
+        print(f"DEBUG: lm_head: {lm_head[:true_vocab_size, :].shape}", flush=True)
         queue_put("output layer", message)
-
 
     # Send BERT lm head and binary head if it exists
     if md.model_type == 'BERT':
