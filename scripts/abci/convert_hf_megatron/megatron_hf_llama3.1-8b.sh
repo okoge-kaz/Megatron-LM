@@ -23,20 +23,20 @@ TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=1
 
 # iteration settings
-START_ITERATION=1
-END_ITERATION=1
+START_ITERATION=2500
+END_ITERATION=2500
 STEP=2500
 
-EXP=checkpoint-convert-test
+EXP=exp1
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-Instruct-ablation/exp1/tp4-pp1-ct2/LR2.5E-5-MINLR2.5E-6-WD0.1
 
 # tokenizer config
 TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B
 
 # hf checkpoint dir base
-HF_CHECKPOINT_DIR_BASE=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b/${EXP}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+HF_CHECKPOINT_DIR_BASE=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b-Instruct-ablation/${EXP}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
 
 mkdir -p ${HF_CHECKPOINT_DIR_BASE}
 

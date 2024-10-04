@@ -20,17 +20,17 @@ module load gcc/11.4.0
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=2
-PIPELINE_PARALLEL_SIZE=4
+TENSOR_PARALLEL_SIZE=4
+PIPELINE_PARALLEL_SIZE=1
 
 # model config
-HF_CHECKPOINT_DIR=/groups/gag51395/hf-checkpoints/Meta-Llama-3-8B
-MEGATRON_CHECKPOINT_DIR=/groups/gag51395/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+HF_CHECKPOINT_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3-8B
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
 
 mkdir -p ${MEGATRON_CHECKPOINT_DIR}
 
 # tokenizer config
-TOKENIZER_MODEL=/groups/gag51395/hf-checkpoints/Meta-Llama-3-8B/tokenizer.json
+TOKENIZER_MODEL=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3-8B/tokenizer.json
 
 # convert
 python tools/checkpoint/convert.py \
