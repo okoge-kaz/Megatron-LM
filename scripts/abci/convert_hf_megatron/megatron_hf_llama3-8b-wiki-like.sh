@@ -18,24 +18,20 @@ module load gcc/11.4.0
 # swich virtual env
 source .env/bin/activate
 
-# distributed settings
-TENSOR_PARALLEL_SIZE=2
-PIPELINE_PARALLEL_SIZE=4
-
 START_ITERATION=2500
 END_ITERATION=5000
 STEP=2500
 
-EXPERIMENT=exp10
+EXPERIMENT=exp1-4
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/wiki-like/${EXPERIMENT}/
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/wiki-like/${EXPERIMENT}/tp4-pp1-ct2/LR2.5E-5-MINLR2.5E-6-WD0.1
 # tokenizer config
-TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3-70B
+TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3-8B
 
 for ITERATION in $(seq $START_ITERATION $STEP $END_ITERATION); do
   FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
-  HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b/wiki-like-${EXPERIMENT}/tp2-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
+  HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b/wiki-like-${EXPERIMENT}/tp4-pp1-ct2-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
   mkdir -p ${HF_CHECKPOINT_DIR}
 
@@ -52,6 +48,7 @@ for ITERATION in $(seq $START_ITERATION $STEP $END_ITERATION); do
     --hf-tokenizer-path ${TOKENIZER_MODEL_DIR} \
     --save-dtype bfloat16 \
     --loader-transformer-impl transformer_engine \
+    --true-vocab-size 128256 \
     --megatron-path /bb/llm/gaf51275/2024/Megatron-LM-v0.8
 
   # change checkpoint iteration

@@ -20,14 +20,14 @@ source .env/bin/activate
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=4
-PIPELINE_PARALLEL_SIZE=1
+PIPELINE_PARALLEL_SIZE=2
 
 # iteration settings
-START_ITERATION=500
+START_ITERATION=2500
 END_ITERATION=12500
-STEP=500
+STEP=2500
 
-EXP=exp8
+EXP=exp6
 
 # model config
 MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-ablation/exp6/tp4-pp2-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
