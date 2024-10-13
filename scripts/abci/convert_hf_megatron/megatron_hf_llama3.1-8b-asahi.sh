@@ -27,10 +27,10 @@ START_ITERATION=781
 END_ITERATION=781
 STEP=2500
 
-EXP=exp1
+EXP=exp1-3
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-asahi/exp1/tp4-pp1-ct2/LR2.5E-5-MINLR2.5E-6-WD0.1/
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-asahi/exp1-3/tp4-pp1-ct2/LR1.0E-5-MINLR1.0E-6-WD0.1/
 
 # tokenizer config
 TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B

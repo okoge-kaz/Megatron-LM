@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l rt_AF=2
+#$ -l rt_AF=4
 #$ -l h_rt=3:00:00:00
 #$ -j y
 #$ -o outputs/Llama-3.1-8b-ablation/
@@ -64,16 +64,16 @@ GLOBAL_BATCH_SIZE=512
 TRAIN_STEPS=781
 LR_DECAY_ITERS=781
 
-LR=2.5E-5
-MIN_LR=2.5E-6
+LR=1.0E-5
+MIN_LR=1.0E-6
 LR_WARMUP_STEPS=100
 WEIGHT_DECAY=0.1
 GRAD_CLIP=1
 
 # model config
 TOKENIZER_MODEL=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B/tokenizer.json
-CHECKPOINT_DIR=/bb/llm/gaf51275/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-asahi/exp1/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
+CHECKPOINT_DIR=/bb/llm/gaf51275/checkpoints/hf-to-megatron/Llama-3.1-Swallow-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-asahi/exp1-3/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
 
 echo ${CHECKPOINT_SAVE_DIR}
 
@@ -90,7 +90,7 @@ TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 709931491 /bb/llm/gaf51275/datasets/Meta-Lla
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 677179489 /bb/llm/gaf51275/datasets/Meta-Llama-3.1_original_transformers-4.44.2/asahi-llm-2024/filter/dump_4_text_document"
 
 # job name
-JOB_NAME="Llama-3.1-8b-asahi-exp1-ABCI-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
+JOB_NAME="Llama-3.1-8b-asahi-exp1-3-ABCI-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
 
 # checkpoint load
 if [[ -f "${CHECKPOINT_SAVE_DIR}/latest_checkpointed_iteration.txt" ]]; then
