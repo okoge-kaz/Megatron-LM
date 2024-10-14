@@ -18,7 +18,7 @@ module load gcc/11.4.0
 # swich virtual env
 source .env/bin/activate
 
-START_ITERATION=12500
+START_ITERATION=2500
 END_ITERATION=12500
 STEP=2500
 

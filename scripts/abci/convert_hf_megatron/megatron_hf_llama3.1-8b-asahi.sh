@@ -23,14 +23,14 @@ TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=1
 
 # iteration settings
-START_ITERATION=781
-END_ITERATION=781
+START_ITERATION=868
+END_ITERATION=868
 STEP=2500
 
-EXP=exp1-3
+EXP=exp1-4
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-asahi/exp1-3/tp4-pp1-ct2/LR1.0E-5-MINLR1.0E-6-WD0.1/
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-asahi/exp1-4/tp4-pp1-ct2/LR2.5E-5-MINLR2.5E-6-WD0.1
 
 # tokenizer config
 TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B
