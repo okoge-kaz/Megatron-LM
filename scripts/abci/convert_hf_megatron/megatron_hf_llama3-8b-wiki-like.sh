@@ -18,11 +18,11 @@ module load gcc/11.4.0
 # swich virtual env
 source .env/bin/activate
 
-START_ITERATION=2500
+START_ITERATION=12500
 END_ITERATION=12500
 STEP=2500
 
-EXPERIMENT=exp2-1
+EXPERIMENT=exp3-3
 
 # model config
 MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/wiki-like/${EXPERIMENT}/tp4-pp1-ct2/LR2.5E-5-MINLR2.5E-6-WD0.1
