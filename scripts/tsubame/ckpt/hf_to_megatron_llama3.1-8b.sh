@@ -4,7 +4,7 @@
 #$ -l h_rt=1:00:00
 #$ -o outputs/convert/hf_megatron/$JOB_ID.log
 #$ -e outputs/convert/hf_megatron/$JOB_ID.log
-#$ -p -5
+#$ -p -3
 
 # Load modules
 module use /gs/fs/tga-NII-LLM/modules/modulefiles
@@ -19,8 +19,8 @@ module load ninja/1.11.1
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=2
-PIPELINE_PARALLEL_SIZE=2
+TENSOR_PARALLEL_SIZE=1
+PIPELINE_PARALLEL_SIZE=1
 
 # model config
 HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3.1-8B
