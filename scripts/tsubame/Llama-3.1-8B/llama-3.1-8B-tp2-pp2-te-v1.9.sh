@@ -1,9 +1,9 @@
 #!/bin/sh
 #$ -cwd
-#$ -l node_f=32
-#$ -l h_rt=00:0:30:00
-#$ -o outputs/Llama-3.1-8b-profile/$JOB_ID.log
-#$ -e outputs/Llama-3.1-8b-profile/$JOB_ID.log
+#$ -l node_f=8
+#$ -l h_rt=00:00:30:00
+#$ -o outputs/Llama-3.1-8b-MLSys25/$JOB_ID.log
+#$ -e outputs/Llama-3.1-8b-MLSys25/$JOB_ID.log
 #$ -p -3
 
 # Load modules
@@ -45,19 +45,19 @@ FFN_HIDDEN_SIZE=14336 # intermediate size (HuggingFace)
 NUM_LAYERS=32
 NUM_HEADS=32
 NUM_KEY_VALUE_HEADS=8
-SEQ_LENGTH=8192
+SEQ_LENGTH=131072
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=4
+CONTEXT_PARALLEL_SIZE=8
 PIPELINE_PARALLEL_SIZE=1
-CONTEXT_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
 PIPLINE_MODEL_CHUNKS=1
 LAYERS_PER_VIRTUAL_PIPELINE_STAGE=$((${NUM_LAYERS} / ${PIPELINE_PARALLEL_SIZE} / ${PIPLINE_MODEL_CHUNKS}))
 
 # training config
-MICRO_BATCH_SIZE=4
+MICRO_BATCH_SIZE=2
 GLOBAL_BATCH_SIZE=1024
 TRAIN_STEPS=25000
 LR_DECAY_ITERS=25000
@@ -422,14 +422,6 @@ mpirun -np $NUM_GPUS \
   --transformer-impl "transformer_engine" \
   --use-mpi \
   --use-z-loss \
-  --torch-profile \
-  --torch-profile-active 2 \
-  --torch-profile-record-shapes \
-  --torch-profile-profile-memory \
-  --torch-profile-with-stack \
-  --torch-profile-with-flops \
-  --torch-profile-with-modules \
-  --tensorboard-dir ${TENSORBOARD_DIR} \
   ${TIMER_ARGS} \
   --log-straggler \
   --disable-straggler-on-startup \

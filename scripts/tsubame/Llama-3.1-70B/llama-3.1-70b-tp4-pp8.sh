@@ -2,9 +2,9 @@
 #$ -cwd
 #$ -l node_f=32
 #$ -l h_rt=00:00:30:00
-#$ -o outputs/Llama-3.1-70b/$JOB_ID.log
-#$ -e outputs/Llama-3.1-70b/$JOB_ID.log
-#$ -p -5
+#$ -o outputs/Llama-3.1-70b-MLSys25/$JOB_ID.log
+#$ -e outputs/Llama-3.1-70b-MLSys25/$JOB_ID.log
+#$ -p -3
 
 # Load modules
 module use /gs/fs/tga-NII-LLM/modules/modulefiles
@@ -49,8 +49,8 @@ SEQ_LENGTH=8192
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=4
-PIPELINE_PARALLEL_SIZE=8
-CONTEXT_PARALLEL_SIZE=1
+CONTEXT_PARALLEL_SIZE=4
+PIPELINE_PARALLEL_SIZE=2
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
 PIPLINE_MODEL_CHUNKS=1
@@ -421,14 +421,6 @@ mpirun -np $NUM_GPUS \
   --transformer-impl "transformer_engine" \
   --use-mpi \
   --use-z-loss \
-  --torch-profile \
-  --torch-profile-active 2 \
-  --torch-profile-record-shapes \
-  --torch-profile-profile-memory \
-  --torch-profile-with-stack \
-  --torch-profile-with-flops \
-  --torch-profile-with-modules \
-  --tensorboard-dir ${TENSORBOARD_DIR} \
   ${TIMER_ARGS} \
   --wandb-name ${JOB_NAME} \
   --wandb-project "GTC25" \
