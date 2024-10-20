@@ -2,7 +2,7 @@
 #$ -l rt_AF=1
 #$ -l h_rt=0:01:00:00
 #$ -j y
-#$ -o outputs/megatron-to-hf/
+#$ -o outputs/check/
 #$ -cwd
 
 # Load modules
@@ -18,6 +18,6 @@ module load gcc/11.4.0
 # swich virtual env
 source .env/bin/activate
 
-python scripts/abci/megatron_to_hf/check.py \
-  --base-hf-model-path /bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-70B \
-  --converted-hf-model-path /bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-70b/checkpoint-convert-test/iter_0000001
+python scripts/abci/checkpoint_check/check.py \
+  --base-hf-model-path /bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B \
+  --converted-hf-model-path /bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b/checkpoint-convert-test/tp4-pp1/iter_0000001

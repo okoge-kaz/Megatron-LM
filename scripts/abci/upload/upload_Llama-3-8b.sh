@@ -2,13 +2,13 @@
 
 set -e
 
-start=2500
-end=5000
+start=10000
+end=12500
 increment=2500
 
-EXPERIMENT_NAME=exp10
+EXPERIMENT_NAME=exp3-3
 
-upload_base_dir=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b/wiki-like-${EXPERIMENT_NAME}/tp2-pp4-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1
+upload_base_dir=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b/wiki-like-${EXPERIMENT_NAME}/tp4-pp1-ct2-LR2.5E-5-MINLR2.5E-6-WD0.1
 
 upload_checkpoint() {
   local upload_dir=$1

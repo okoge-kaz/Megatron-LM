@@ -1,8 +1,8 @@
 #!/bin/bash
-#$ -l rt_AF=2
-#$ -l h_rt=7:00:00:00
+#$ -l rt_AF=16
+#$ -l h_rt=3:00:00:00
 #$ -j y
-#$ -o outputs/Llama-3-8b-math-code/
+#$ -o outputs/Llama-3-8b-wiki-like/
 #$ -cwd
 
 # Load modules
@@ -50,16 +50,16 @@ NUM_KEY_VALUE_HEADS=8
 SEQ_LENGTH=8192
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=4   # fixed
-PIPELINE_PARALLEL_SIZE=4 # num layers 32: Llama-2 8B
-CONTEXT_PARALLEL_SIZE=1
+TENSOR_PARALLEL_SIZE=4
+PIPELINE_PARALLEL_SIZE=1
+CONTEXT_PARALLEL_SIZE=2
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
 # training config
-MICRO_BATCH_SIZE=1
-GLOBAL_BATCH_SIZE=256
-TRAIN_STEPS=7000  # 14.6B Tokens (dataset is 14.43B Token)
-LR_DECAY_ITERS=7000
+MICRO_BATCH_SIZE=2
+GLOBAL_BATCH_SIZE=512
+TRAIN_STEPS=12500  # 50B Tokens
+LR_DECAY_ITERS=12500
 
 LR=2.5E-5
 MIN_LR=2.5E-6
@@ -68,9 +68,9 @@ WEIGHT_DECAY=0.1
 GRAD_CLIP=1
 
 # model config
-TOKENIZER_MODEL=/groups/gag51395/hf-checkpoints/Meta-Llama-3-8B/tokenizer.json
-CHECKPOINT_DIR=/groups/gag51395/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/math-code-exp2/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
+TOKENIZER_MODEL=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3-8B/tokenizer.json
+CHECKPOINT_DIR=/bb/llm/gaf51275/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/wiki-like/exp3-3/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
 
 echo ${CHECKPOINT_SAVE_DIR}
 
@@ -79,14 +79,18 @@ mkdir -p ${CHECKPOINT_SAVE_DIR}
 # data config
 TRAIN_DATA_PATH=""
 
-# starcoder ja
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1906420627 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/starcoderdata_ja_text_document"
+# japanese wiki
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1691211578 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/ja_wiki_merged_text_document"
 
-# math open-web-math
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 12527398645 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/proof-pile-2-train_merged_open-web-math_text_document"
+# llm filter top10
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 10063955552 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/Swallow_v2/edu/quality_filtering_ablation/filter-v2-llm-top10-subset/dump_0_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 7581734357 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/Swallow_v2/edu/quality_filtering_ablation/filter-v2-llm-top10-subset/dump_1_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 14013878769 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/Swallow_v2/edu/quality_filtering_ablation/filter-v2-llm-top10-subset/dump_2_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 12441817520 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/Swallow_v2/edu/quality_filtering_ablation/filter-v2-llm-top10-subset/dump_3_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4207402223 /bb/llm/gaf51275/datasets/Meta-Llama-3_original_transformers-4.40.1/Swallow_v2/edu/quality_filtering_ablation/filter-v2-llm-top10-subset/dump_4_text_document"
 
 # job name
-JOB_NAME="Llama-3-8b-math-code-exp2-ABCI-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
+JOB_NAME="Llama-3-8b-swallow-filter-exp3-3-ABCI-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
 
 # checkpoint load
 if [[ -f "${CHECKPOINT_SAVE_DIR}/latest_checkpointed_iteration.txt" ]]; then
@@ -104,6 +108,7 @@ mpirun -np $NUM_GPUS \
   -x MASTER_ADDR=$MASTER_ADDR \
   -x MASTER_PORT=$MASTER_PORT \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
+  -x NCCL_IB_TIMEOUT=22 \
   -x LD_LIBRARY_PATH \
   -x PATH \
   -bind-to none \
@@ -113,6 +118,8 @@ mpirun -np $NUM_GPUS \
   --context-parallel-size ${CONTEXT_PARALLEL_SIZE} \
   --sequence-parallel \
   --use-distributed-optimizer \
+  --overlap-grad-reduce \
+  --overlap-param-gather \
   --num-layers ${NUM_LAYERS} \
   --hidden-size ${HIDDEN_SIZE} \
   --ffn-hidden-size ${FFN_HIDDEN_SIZE} \
@@ -131,7 +138,7 @@ mpirun -np $NUM_GPUS \
   ${CHECKPOINT_ARGS} \
   --save ${CHECKPOINT_SAVE_DIR} \
   --data-path ${TRAIN_DATA_PATH} \
-  --split 998,1,1 \
+  --split 990,10,0 \
   --distributed-backend nccl \
   --lr ${LR} \
   --min-lr ${MIN_LR} \
@@ -154,7 +161,7 @@ mpirun -np $NUM_GPUS \
   --untie-embeddings-and-output-weights \
   --no-position-embedding \
   --position-embedding-type rope \
-  --rope-theta 500000.0 \
+  --rotary-base 500000.0 \
   --disable-bias-linear \
   --use-mcore-models \
   --normalization RMSNorm \
@@ -164,9 +171,8 @@ mpirun -np $NUM_GPUS \
   --hidden-dropout 0.0 \
   --swiglu \
   --use-flash-attn \
-  --recompute-activations \
-  --recompute-granularity "selective" \
   --attention-softmax-in-fp32 \
+  --accumulate-allreduce-grads-in-fp32 \
   --transformer-impl "transformer_engine" \
   --use-mpi \
   --use-z-loss \
@@ -174,5 +180,5 @@ mpirun -np $NUM_GPUS \
   --log-straggler \
   --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "Llama-3-8B-ablation" \
+  --wandb-project "Llama-3-8B-swallow-filter" \
   --wandb-entity "prj-jalm"

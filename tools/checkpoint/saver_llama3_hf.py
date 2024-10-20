@@ -92,7 +92,7 @@ def save_checkpoint(queue: mp.Queue, args):
         }
 
     llama_conf = LlamaConfig(
-        vocab_size=mag_conf.padded_vocab_size,
+        vocab_size=md.padded_vocab_size,
         hidden_size=mag_conf.hidden_size,
         intermediate_size=mag_conf.ffn_hidden_size,
         num_hidden_layers=mag_conf.encoder_num_layers,

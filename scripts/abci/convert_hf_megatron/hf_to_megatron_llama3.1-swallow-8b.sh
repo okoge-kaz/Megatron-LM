@@ -24,13 +24,15 @@ TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=1
 
 # model config
-HF_CHECKPOINT_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3-8B
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/checkpoints/hf-to-megatron/Llama-3-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b/tp4-pp2-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_0027500
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/checkpoints/hf-to-megatron/Llama-3.1-Swallow-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
 
 mkdir -p ${MEGATRON_CHECKPOINT_DIR}
 
 # tokenizer config
-TOKENIZER_MODEL=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3-8B/tokenizer.json
+TOKENIZER_MODEL=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b/tp4-pp2-ct1-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_0027500/tokenizer.json
+
+export CUDA_DEVICE_MAX_CONNECTIONS=1
 
 # convert
 python tools/checkpoint/convert.py \

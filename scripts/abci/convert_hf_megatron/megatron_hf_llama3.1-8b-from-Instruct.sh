@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=1
-#$ -l h_rt=0:00:30:00
+#$ -l h_rt=0:1:00:00
 #$ -j y
 #$ -o outputs/megatron-to-hf/
 #$ -cwd
@@ -15,27 +15,42 @@ module load nccl/2.20.5
 module load hpcx/2.12
 module load gcc/11.4.0
 
-# swich virtual env
+# switch virtual env
 source .env/bin/activate
 
+# distributed settings
+TENSOR_PARALLEL_SIZE=4
+PIPELINE_PARALLEL_SIZE=1
+
+# iteration settings
 START_ITERATION=2500
-END_ITERATION=12500
+END_ITERATION=2500
 STEP=2500
 
-EXPERIMENT=exp3-3
+EXP=exp1
 
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/wiki-like/${EXPERIMENT}/tp4-pp1-ct2/LR2.5E-5-MINLR2.5E-6-WD0.1
-# tokenizer config
-TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3-8B
+MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-Instruct-ablation/exp1/tp4-pp1-ct2/LR2.5E-5-MINLR2.5E-6-WD0.1
 
+# tokenizer config
+TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B
+
+# hf checkpoint dir base
+HF_CHECKPOINT_DIR_BASE=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b-Instruct-ablation/${EXP}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+
+mkdir -p ${HF_CHECKPOINT_DIR_BASE}
+
+export CUDA_DEVICE_MAX_CONNECTIONS=1
+
+# iterate through specified iterations
 for ITERATION in $(seq $START_ITERATION $STEP $END_ITERATION); do
   FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
-  HF_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3-8b/wiki-like-${EXPERIMENT}/tp4-pp1-ct2-LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
+  HF_CHECKPOINT_DIR=${HF_CHECKPOINT_DIR_BASE}/iter_${FORMATTED_ITERATION}
 
   mkdir -p ${HF_CHECKPOINT_DIR}
 
   CURRENT_ITERATION=$(cat "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt")
+
   echo $ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
 
   # convert
@@ -49,10 +64,11 @@ for ITERATION in $(seq $START_ITERATION $STEP $END_ITERATION); do
     --save-dtype bfloat16 \
     --loader-transformer-impl transformer_engine \
     --true-vocab-size 128256 \
-    --megatron-path /bb/llm/gaf51275/2024/Megatron-LM-v0.8
+    --megatron-path /bb/llm/gaf51275/2024/Megatron-LM-v0.8 \
+    --llama-3-1
 
-  # change checkpoint iteration
+  # reset checkpoint iteration
   echo $CURRENT_ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
 done
 
-echo "Finished converting Megatron-LM to Hugging Face"
+echo "checkpoint conversion completed"

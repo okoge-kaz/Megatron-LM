@@ -275,8 +275,8 @@ def _load_checkpoint(queue, args):
     md.swiglu = margs.swiglu
     md.previous_tensor_parallel_size = margs.tensor_model_parallel_size
     md.previous_pipeline_parallel_size = margs.pipeline_model_parallel_size
-    md.true_vocab_size = None  # skips padding in saver
-    md.make_vocab_size_divisible_by = None
+    md.true_vocab_size = margs.vocab_size
+    md.make_vocab_size_divisible_by = 128
     md.checkpoint_args = margs
     md.consumed_train_samples = 0
     md.consumed_valid_samples = 0

@@ -7,40 +7,25 @@
 
 # module load
 source /etc/profile.d/modules.sh
-module load cuda/11.8/11.8.0
-module load cudnn/8.9/8.9.2
-module load nccl/2.16/2.16.2-1
-module load hpcx/2.12
+module use /bb/llm/gaf51275/modules/modulefiles
 
-# python virtualenv
-cd /bb/llm/gaf51275/llama/Megatron-LM
+module load cuda/12.1/12.1.1
+module load cudnn/cuda-12.1/9.0.0
+module load nccl/2.20.5
+module load hpcx/2.12
+module load gcc/11.4.0
+
 source .env/bin/activate
 
-DATASET_DIR=/bb/llm/gaf51275/llama/datasets/llama2-llm-jp-corpus/v1.0.2/sample
-OUTPUT_DIR=/bb/llm/gaf51275/llama/datasets/llama2-llm-jp-corpus/v1.0.2/tokenized/sentencepiece
+DATASET_DIR=/bb/llm/gaf51275/datasets/raw/pretrain/stack_v2_python
+OUTPUT_DIR=/bb/llm/gaf51275/datasets/Meta-Llama-3.1_original_transformers-4.45.2
 
 mkdir -p ${OUTPUT_DIR}
 
-# tokenize japanese cc
-for ((i = 0; i <= 37; i++)); do
-  INPUT_FILE=${DATASET_DIR}/ja_cc/merged_train_${i}.jsonl
-
-  python tools/preprocess_data.py \
-    --input ${INPUT_FILE} \
-    --output-prefix ${OUTPUT_DIR}/ja_cc_${i} \
-    --tokenizer-type Llama2Tokenizer \
-    --tokenizer-model /bb/llm/gaf51275/jalm/jalm-tokenizer-private/tokenizer/jalm_llama_clueweb/merged_tokenizer_sp/jalm_llama.model \
-    --vocab-file /bb/llm/gaf51275/jalm/jalm-tokenizer-private/tokenizer/jalm_llama_clueweb/merged_tokenizer_sp/jalm_llama.vocab \
-    --append-eod \
-    --workers 64
-done
-
-# tokenize japanese wikipedia
 python tools/preprocess_data.py \
-  --input ${DATASET_DIR}/ja_wiki/merged_train_0.jsonl \
-  --output-prefix ${OUTPUT_DIR}/ja_wiki \
-  --tokenizer-type Llama2Tokenizer \
-  --tokenizer-model /bb/llm/gaf51275/jalm/jalm-tokenizer-private/tokenizer/jalm_llama_clueweb/merged_tokenizer_sp/jalm_llama.model \
-  --vocab-file /bb/llm/gaf51275/jalm/jalm-tokenizer-private/tokenizer/jalm_llama_clueweb/merged_tokenizer_sp/jalm_llama.vocab \
+  --input ${DATASET_DIR}/merged_0.jsonl \
+  --output-prefix ${OUTPUT_DIR}/stack_v2_python_all \
+  --tokenizer-type Llama3Tokenizer \
+  --tokenizer-model /bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B/tokenizer.json \
   --append-eod \
-  --workers 64
+  --workers 72
