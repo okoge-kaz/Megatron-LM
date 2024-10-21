@@ -225,6 +225,7 @@ def compute_per_gpu_memory_consumption_activation(args: argparse.Namespace):
 
     s = s // args.context_parallel_size  # self attentionでは、s // context_parallel_size ではないが、selective activation recomputationしているので無視
 
+    # TODO: sequence parallelを有効にするかの場合分け追加
     activation_memory = (
         # transformer layer
         2 * s * b * h # LayerNorm (TODO: RMSNormとLayerNormで同じ?)
@@ -233,41 +234,49 @@ def compute_per_gpu_memory_consumption_activation(args: argparse.Namespace):
             2 * s * b * h  # x -> Q, K, V
             + (2 * s * b * h)  # Q * K^T -> attention scores (Q)
             + (2 * s * b * h) * (k / a)  # Q * K^T -> attention scores (K) (grouped query attention)
-            + (2 * b * s * s * a) if not (
-                args.selective_activation_recomputation or args.use_flash_attention
-            ) else 0  # Q*K^T -> softmax(Q*K^T)
-            + 0 if args.no_dropout else (1 * b * s * s * a) if not (
-                args.selective_activation_recomputation or args.use_flash_attention
-            ) else 0 # softmax(Q*K^T) -> Dropout
-            + (2 * b * s * h) * (k / a)  # attention scores * V -> attention output (V) (grouped query attention)
-            + (2 * b * a * s * s) if not (
-                args.selective_activation_recomputation or args.use_flash_attention
-            ) else 0 # Dropout(softmax(Q*K^T)) * V -> attention output (Dropout)
+            + (  # Q*K^T -> softmax(Q*K^T)
+                0 if (
+                    args.selective_activation_recomputation or args.use_flash_attention
+                ) else (2 * b * s * s * a)
+            )
+            + (  # softmax(Q*K^T) -> Dropout
+                0 if args.no_dropout else 0 if (
+                    args.selective_activation_recomputation or args.use_flash_attention
+                ) else (1 * b * s * s * a)
+            )
+            + ((2 * b * s * h) * (k / a))  # attention scores * V -> attention output (V) (grouped query attention)
+            + (  # Dropout(softmax(Q*K^T)) * V -> attention output (Dropout)
+                0 if (
+                    args.selective_activation_recomputation or args.use_flash_attention
+                ) else (2 * b * a * s * s)
+            )
             + (2 * b * s * h)  # attention output -> attention output (Linear)
         )
-        + 0 if args.no_dropout else (b * s * h)  # attention output -> Dropout
+        + (0 if args.no_dropout else (b * s * h))  # attention output -> Dropout
         + (2 * b * s * h)  # Dropout(attention output -> LayerNorm
         + (
             # MLP
             # SwiGLU
             # self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
             2 * b * s * h  # up_proj & gate_proj
-            + 2 * b * s * args.ffn_hidden_size  # act_fn (up)
-            + 2 * b * s * args.ffn_hidden_size  # act_fn (gate)
+            + 2 * b * s * args.ffn_hidden_size  # act_fn (up) -> GLU(act_fn)
+            + 2 * b * s * args.ffn_hidden_size  # act_fn act_fn -> x
+            + 2 * b * s * args.ffn_hidden_size  # act_fn (gate) -> x
             + 2 * b * s * args.ffn_hidden_size  # act_fn (down)
         )
-        + 0 if args.no_dropout else (b * s * h) # MLP -> Dropout
-    ) * args.num_layers / args.tensor_parallel_size  # TODO: sequence parallelを有効にするかの場合分け追加
-    activation_memory *= (args.num_layers // args.pipeline_parallel_size)
+        + (0 if args.no_dropout else (b * s * h)) # MLP -> Dropout
+    ) * args.num_layers / args.pipeline_parallel_size / args.tensor_parallel_size
 
     first_stage_activation_memory = activation_memory * args.pipeline_parallel_size # 1F1B
+
     first_stage_activation_memory += (  # input ot embedding (pp size microbatch in flight)
         8 * s * b * h * args.pipeline_parallel_size  # これの出どころ謎
-    ) / args.tensor_parallel_size  # TODO: sequence parallelを有効にするかの場合分け追加
-    first_stage_activation_memory += (
+    )  # TODO: tensor parallel なし?
+
+    first_stage_activation_memory += ((
         # dropout in embedding layer (pp size microbatehes in flight)
         s * b * h * args.pipeline_parallel_size
-    ) / args.tensor_parallel_size  # TODO: sequence parallelを有効にするかの場合分け追加
+    ) / args.tensor_parallel_size)
 
     if args.pipeline_parallel_size == 1:
         # if pp_size == 1 (lm-head cross entropy)
