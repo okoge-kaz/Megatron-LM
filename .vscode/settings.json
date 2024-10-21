@@ -1,7 +1,10 @@
 {
   "cSpell.words": [
+    "layernorm",
+    "layernorms",
     "margs",
     "OMPI",
+    "swiglu",
     "TFLOP",
     "TSUBAME",
     "wavelen"
