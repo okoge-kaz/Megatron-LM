@@ -52,6 +52,10 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
     else:
         num_parameters_in_embedding_layers = embedding_size
 
+    num_bytes_per_parameter = (
+        18 if not args.use_distributed_optimizer else 6 + (12 / args.data_parallel_size)
+    )
+
     if args.pipeline_parallel_size == 1:
         num_parameters_in_transformer_layers = (
             2
@@ -74,18 +78,62 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
         )
         num_total_parameters = num_parameters_in_transformer_layers + num_parameters_in_embedding_layers
         print(
-            f"Number of parameters (per GPU): {num_total_parameters / 1e9:.2f}B"
-        )
-        num_bytes_per_parameter = (
-            18 if not args.use_distributed_optimizer else 6 + (12 / args.data_parallel_size)
+            f"Number of parameters (per GPU): {num_total_parameters / 1e9:.5f}B"
         )
         wight_and_optimizer_memory = num_total_parameters * num_bytes_per_parameter
         print(
-            f"Memory consumption of weights and optimizer (per GPU): {wight_and_optimizer_memory / 1024 / 1024 / 1024:.2f}GB"
+            f"Memory consumption of weights and optimizer (per GPU): {wight_and_optimizer_memory / 1024 / 1024 / 1024:.5f}GB"
         )
 
     elif args.pipeline_parallel_size == 2:
-        pass
+        first_stage_num_parameters_in_transformer_layers = (
+            2
+            * (args.num_layers / args.pipeline_parallel_size)
+            * args.hidden_size
+            * args.hidden_size
+            * (
+                # Attention.
+                (
+                    (1 + (args.num_key_value_heads / args.num_attention_heads)) / args.tensor_parallel_size
+                )
+                # MLP.
+                + ((args.ffn_hidden_size / args.hidden_size) * num_experts * gated_linear_multiplier) / args.tensor_parallel_size
+                # Transformer layernorms.
+                + (1 / args.hidden_size)  # TODO: Sequence Parallelismでは分割されるが、memoryも減る?
+            )
+        )
+        first_stage_num_total_parameters = first_stage_num_parameters_in_transformer_layers + embedding_size
+
+        second_stage_num_parameters_in_transformer_layers = (
+            2
+            * (args.num_layers / args.pipeline_parallel_size)
+            * args.hidden_size
+            * args.hidden_size
+            * (
+                # Attention.
+                (
+                    (1 + (args.num_key_value_heads / args.num_attention_heads)) / args.tensor_parallel_size
+                )
+                # MLP.
+                + ((args.ffn_hidden_size / args.hidden_size) * num_experts * gated_linear_multiplier) / args.tensor_parallel_size
+                # Transformer layernorms.
+                + (1 / args.hidden_size)  # TODO: Sequence Parallelismでは分割されるが、memoryも減る?
+            )
+        ) + (
+            # final layernorm
+            args.hidden_size  # TODO: Sequence Parallelismでは分割される?
+        )
+        second_stage_num_total_parameters = second_stage_num_parameters_in_transformer_layers + embedding_size
+
+        first_stage_weight_and_optimizer_memory = first_stage_num_total_parameters * num_bytes_per_parameter
+        second_stage_weight_and_optimizer_memory = second_stage_num_total_parameters * num_bytes_per_parameter
+
+        print(
+            f"Number of parameters (per GPU) in the first stage: {first_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024:.5f}GB"
+        )
+        print(
+            f"Number of parameters (per GPU) in the second stage: {second_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024:.5f}GB"
+        )
     else:
         pass
 
