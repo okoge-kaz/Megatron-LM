@@ -27,7 +27,7 @@ START_ITERATION=1000
 END_ITERATION=5000
 STEP=1000
 
-EXP=exp2-1
+EXP=exp2-6
 
 # model config
 MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-8b-asahi/${EXP}/tp4-pp1-ct2/LR2.5E-5-MINLR2.5E-6-WD0.1
