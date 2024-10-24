@@ -53,7 +53,9 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
         num_parameters_in_embedding_layers = embedding_size
 
     num_bytes_per_parameter = (
-        18 if not args.use_distributed_optimizer else 6 + (12 / args.data_parallel_size)
+        18 if not args.use_distributed_optimizer else 6 + (
+            12 / args.data_parallel_size // args.context_parallel_size
+        )
     )
 
     if args.pipeline_parallel_size == 1:
@@ -273,7 +275,8 @@ def compute_per_gpu_memory_consumption_activation(args: argparse.Namespace):
     #     8 * s * b * h * args.pipeline_parallel_size  # これの出どころ謎
     # )  # TODO: tensor parallel なし?
 
-    first_stage_activation_memory += ((
+    # Llamaはhidden dropoutなし
+    first_stage_activation_memory += 0 if args.no_dropout else ((
         # dropout in embedding layer (pp size microbatehes in flight)
         s * b * h * args.pipeline_parallel_size
     ) / args.tensor_parallel_size)
