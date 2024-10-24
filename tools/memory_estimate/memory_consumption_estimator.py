@@ -271,9 +271,10 @@ def compute_per_gpu_memory_consumption_activation(args: argparse.Namespace):
 
     first_stage_activation_memory = activation_memory * args.pipeline_parallel_size # 1F1B
 
-    # first_stage_activation_memory += (  # input ot embedding (pp size microbatch in flight)
-    #     8 * s * b * h * args.pipeline_parallel_size  # これの出どころ謎
-    # )  # TODO: tensor parallel なし?
+    first_stage_activation_memory += ((  # input ot embedding (pp size microbatch in flight)
+        # 8 bytes (int64) input_ids
+        8 * s * b * h * args.pipeline_parallel_size
+    ) / args.tensor_parallel_size)
 
     # Llamaはhidden dropoutなし
     first_stage_activation_memory += 0 if args.no_dropout else ((
