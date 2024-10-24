@@ -70,11 +70,11 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
                 # MLP.
                 + ((args.ffn_hidden_size / args.hidden_size) * num_experts * gated_linear_multiplier) / args.tensor_parallel_size
                 # Transformer layernorms.
-                + (1 / args.hidden_size)  # TODO: Sequence Parallelismでは分割されるが、memoryも減る?
+                + (1 / args.hidden_size)
             )
         ) + (
             # final layernorm
-            args.hidden_size  # TODO: Sequence Parallelismでは分割される?
+            args.hidden_size
         )
         num_total_parameters = num_parameters_in_transformer_layers + num_parameters_in_embedding_layers
         print(
@@ -101,7 +101,7 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
                 # MLP.
                 + ((args.ffn_hidden_size / args.hidden_size) * num_experts * gated_linear_multiplier) / args.tensor_parallel_size
                 # Transformer layernorms.
-                + (1 / args.hidden_size)  # TODO: Sequence Parallelismでは分割されるが、memoryも減る?
+                + (1 / args.hidden_size)
             )
         )
         first_stage_num_total_parameters = first_stage_num_parameters_in_transformer_layers + embedding_size
@@ -119,11 +119,11 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
                 # MLP.
                 + ((args.ffn_hidden_size / args.hidden_size) * num_experts * gated_linear_multiplier) / args.tensor_parallel_size
                 # Transformer layernorms.
-                + (1 / args.hidden_size)  # TODO: Sequence Parallelismでは分割されるが、memoryも減る?
+                + (1 / args.hidden_size)
             )
         ) + (
             # final layernorm
-            args.hidden_size  # TODO: Sequence Parallelismでは分割される?
+            args.hidden_size
         )
         second_stage_num_total_parameters = second_stage_num_parameters_in_transformer_layers + embedding_size
 
@@ -154,7 +154,7 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
                 # MLP.
                 + ((args.ffn_hidden_size / args.hidden_size) * num_experts * gated_linear_multiplier) / args.tensor_parallel_size
                 # Transformer layernorms.
-                + (1 / args.hidden_size)  # TODO: Sequence Parallelismでは分割されるが、memoryも減る?
+                + (1 / args.hidden_size)  # sequence parallelism で分割する方向はsequence方向なので、hidden size方向にはメモリを分割しないので減らない
             )
         )
         first_stage_num_total_parameters = first_stage_num_parameters_in_transformer_layers + embedding_size
@@ -172,7 +172,7 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
                 # MLP.
                 + ((args.ffn_hidden_size / args.hidden_size) * num_experts * gated_linear_multiplier) / args.tensor_parallel_size
                 # Transformer layernorms.
-                + (1 / args.hidden_size)  # TODO: Sequence Parallelismでは分割されるが、memoryも減る?
+                + (1 / args.hidden_size)
             )
         )
         mid_stage_num_total_parameters = mid_stage_num_parameters_in_transformer_layers
@@ -190,11 +190,11 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
                 # MLP.
                 + ((args.ffn_hidden_size / args.hidden_size) * num_experts * gated_linear_multiplier) / args.tensor_parallel_size
                 # Transformer layernorms.
-                + (1 / args.hidden_size)  # TODO: Sequence Parallelismでは分割されるが、memoryも減る?
+                + (1 / args.hidden_size)
             )
         ) + (
             # final layernorm
-            args.hidden_size  # TODO: Sequence Parallelismでは分割される?
+            args.hidden_size
         )
         last_stage_num_total_parameters = last_stage_num_parameters_in_transformer_layers + embedding_size
 
@@ -228,7 +228,7 @@ def compute_per_gpu_memory_consumption_activation(args: argparse.Namespace):
     # TODO: sequence parallelを有効にするかの場合分け追加
     activation_memory = (
         # transformer layer
-        2 * s * b * h # LayerNorm (TODO: RMSNormとLayerNormで同じ?)
+        2 * s * b * h # LayerNorm
         + (
             # attention
             2 * s * b * h  # x -> Q, K, V
@@ -269,9 +269,9 @@ def compute_per_gpu_memory_consumption_activation(args: argparse.Namespace):
 
     first_stage_activation_memory = activation_memory * args.pipeline_parallel_size # 1F1B
 
-    first_stage_activation_memory += (  # input ot embedding (pp size microbatch in flight)
-        8 * s * b * h * args.pipeline_parallel_size  # これの出どころ謎
-    )  # TODO: tensor parallel なし?
+    # first_stage_activation_memory += (  # input ot embedding (pp size microbatch in flight)
+    #     8 * s * b * h * args.pipeline_parallel_size  # これの出どころ謎
+    # )  # TODO: tensor parallel なし?
 
     first_stage_activation_memory += ((
         # dropout in embedding layer (pp size microbatehes in flight)
@@ -282,6 +282,7 @@ def compute_per_gpu_memory_consumption_activation(args: argparse.Namespace):
         # if pp_size == 1 (lm-head cross entropy)
         first_stage_activation_memory += (
             # lm-head cross entropy (FP32)
+            # output layer (layer norm) + output layer (linear)
             4 * s * b * h * (1 + args.vocab_size / h)
         ) / args.tensor_parallel_size
 
