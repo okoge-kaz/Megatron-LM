@@ -226,6 +226,7 @@ def compute_per_gpu_memory_consumption_activation(args: argparse.Namespace):
     k = args.num_key_value_heads
 
     s = s // args.context_parallel_size  # self attentionでは、s // context_parallel_size ではないが、selective activation recomputationしているので無視
+    print(f"seq_length: {s}")
 
     # TODO: sequence parallelを有効にするかの場合分け追加
     activation_memory = (
