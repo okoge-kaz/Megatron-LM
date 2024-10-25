@@ -54,7 +54,7 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
 
     num_bytes_per_parameter = (
         18 if not args.use_distributed_optimizer else 6 + (
-            12 / args.data_parallel_size // args.context_parallel_size
+            12 / args.data_parallel_size / args.context_parallel_size
         )
     )
 
@@ -84,7 +84,7 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
         )
         wight_and_optimizer_memory = num_total_parameters * num_bytes_per_parameter
         print(
-            f"Memory consumption of weights and optimizer (per GPU): {wight_and_optimizer_memory / 1024 / 1024 / 1024:.5f}GB"
+            f"Memory consumption of weights and optimizer (per GPU): {wight_and_optimizer_memory / 1024 / 1024 / 1024}GB"
         )
 
         return (wight_and_optimizer_memory / 1024 / 1024 / 1024, 0, 0)
@@ -133,10 +133,10 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
         second_stage_weight_and_optimizer_memory = second_stage_num_total_parameters * num_bytes_per_parameter
 
         print(
-            f"Number of parameters (per GPU) in the first stage: {first_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024:.5f}GB"
+            f"Number of parameters (per GPU) in the first stage: {first_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024} GB"
         )
         print(
-            f"Number of parameters (per GPU) in the second stage: {second_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024:.5f}GB"
+            f"Number of parameters (per GPU) in the second stage: {second_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024} GB"
         )
 
         return (first_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024, 0,second_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024)
@@ -145,7 +145,7 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
 
         first_stage_num_parameters_in_transformer_layers = (
             2
-            * (args.num_layers // args.pipeline_parallel_size)
+            * (args.num_layers / args.pipeline_parallel_size)
             * args.hidden_size
             * args.hidden_size
             * (
@@ -163,7 +163,7 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
 
         mid_stage_num_parameters_in_transformer_layers = (
             2
-            * (args.num_layers // args.pipeline_parallel_size)
+            * (args.num_layers / args.pipeline_parallel_size)
             * args.hidden_size
             * args.hidden_size
             * (
@@ -181,7 +181,7 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
 
         last_stage_num_parameters_in_transformer_layers = (
             2
-            * (args.num_layers // args.pipeline_parallel_size)
+            * (args.num_layers / args.pipeline_parallel_size)
             * args.hidden_size
             * args.hidden_size
             * (
@@ -204,13 +204,13 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
         mid_stage_weight_and_optimizer_memory = mid_stage_num_total_parameters * num_bytes_per_parameter
         last_stage_weight_and_optimizer_memory = last_stage_num_total_parameters * num_bytes_per_parameter
         print(
-            f"memory used (per GPU) in the first stage: {first_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024:.5f}GB"
+            f"memory used (per GPU) in the first stage: {first_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024} GB"
         )
         print(
-            f"memory used (per GPU) in the middle stage: {mid_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024:.5f}GB"
+            f"memory used (per GPU) in the middle stage: {mid_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024} GB"
         )
         print(
-            f"memory used (per GPU) in the last stage: {last_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024:.5f}GB"
+            f"memory used (per GPU) in the last stage: {last_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024} GB"
         )
 
         return (
@@ -225,10 +225,12 @@ def compute_per_gpu_memory_consumption_activation(args: argparse.Namespace):
     a = args.num_attention_heads
     k = args.num_key_value_heads
 
-    s = s // args.context_parallel_size  # self attentionでは、s // context_parallel_size ではないが、selective activation recomputationしているので無視
+    s = s / args.context_parallel_size
+    # self attentionでは、s / context_parallel_size ではない
+    # しかし、flash-attentionにより、s * s のactivationはHBM上で実体化されない
     print(f"seq_length: {s}")
 
-    # TODO: sequence parallelを有効にするかの場合分け追加
+    # sequence parallelを有効にするかの場合分け (Dropout, LayerNormにのみ関係)
     activation_memory = (
         # transformer layer
         2 * s * b * h # LayerNorm
@@ -268,7 +270,7 @@ def compute_per_gpu_memory_consumption_activation(args: argparse.Namespace):
             + 2 * b * s * args.ffn_hidden_size  # act_fn (down)
         )
         + (0 if args.no_dropout else (b * s * h)) # MLP -> Dropout
-    ) * args.num_layers / args.pipeline_parallel_size / args.tensor_parallel_size
+    ) * float(args.num_layers) / args.pipeline_parallel_size / args.tensor_parallel_size
 
     first_stage_activation_memory = activation_memory * args.pipeline_parallel_size # 1F1B
 
@@ -291,7 +293,7 @@ def compute_per_gpu_memory_consumption_activation(args: argparse.Namespace):
             4 * s * b * h * (1 + args.vocab_size / h)
         ) / args.tensor_parallel_size
 
-    print("memory used (per GPU):", first_stage_activation_memory / 1024 / 1024 / 1024, "GB")
+    print(f"memory used (per GPU): {first_stage_activation_memory / 1024 / 1024 / 1024} GB")
 
     return first_stage_activation_memory / 1024 / 1024 / 1024, 0, 0
 
