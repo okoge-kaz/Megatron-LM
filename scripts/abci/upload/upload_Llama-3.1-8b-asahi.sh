@@ -6,7 +6,9 @@ start=1000
 end=5000
 increment=1000
 
-upload_base_dir=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b-asahi-ablation/exp2-1/tp4-pp1
+EXP=exp2-3
+
+upload_base_dir=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-8b-asahi-ablation/${EXP}/tp4-pp1
 
 upload_checkpoint() {
   local upload_dir=$1
@@ -33,7 +35,7 @@ upload_checkpoint() {
 
 for ((i = start; i <= end; i += increment)); do
   upload_dir=$upload_base_dir/iter_$(printf "%07d" $i)
-  repo_name="swallow-asahidata/Llama-3.1-Swallow-8B-exp2-1-LR2.5E-5-MINLR2.5E-6-WD0.1-iter$(printf "%07d" $i)"
+  repo_name="swallow-asahidata/Llama-3.1-Swallow-8B-${EXP}-LR2.5E-5-MINLR2.5E-6-WD0.1-iter$(printf "%07d" $i)"
 
   if ! upload_checkpoint "$upload_dir" "$repo_name"; then
     echo "Skipping to next checkpoint after repeated failures for $repo_name"
