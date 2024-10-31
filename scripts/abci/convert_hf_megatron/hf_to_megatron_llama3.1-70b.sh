@@ -21,7 +21,7 @@ source .env/bin/activate
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=8
-PIPELINE_PARALLEL_SIZE=16
+PIPELINE_PARALLEL_SIZE=4
 
 # model config
 HF_CHECKPOINT_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-70B
