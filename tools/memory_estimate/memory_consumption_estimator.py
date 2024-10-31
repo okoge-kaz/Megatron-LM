@@ -139,7 +139,11 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
             f"Number of parameters (per GPU) in the second stage: {second_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024} GB"
         )
 
-        return (first_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024, 0,second_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024)
+        return (
+            first_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024,
+            0,
+            second_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024
+        )
     else:
         assert args.num_layers % args.pipeline_parallel_size == 0
 
@@ -214,7 +218,9 @@ def compute_per_gpu_memory_consumption_weight_and_optimizer(args: argparse.Names
         )
 
         return (
-            first_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024, mid_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024, last_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024
+            first_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024,
+            mid_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024,
+            last_stage_weight_and_optimizer_memory / 1024 / 1024 / 1024
         )
 
 
@@ -233,7 +239,7 @@ def compute_per_gpu_memory_consumption_activation(args: argparse.Namespace):
     # sequence parallelを有効にするかの場合分け (Dropout, LayerNormにのみ関係)
     activation_memory = (
         # transformer layer
-        2 * s * b * h # LayerNorm
+        2 * s * b * h  # LayerNorm
         + (
             # attention
             2 * s * b * h  # x -> Q, K, V
@@ -269,10 +275,10 @@ def compute_per_gpu_memory_consumption_activation(args: argparse.Namespace):
             + 2 * b * s * args.ffn_hidden_size  # act_fn (gate) -> x
             + 2 * b * s * args.ffn_hidden_size  # act_fn (down)
         )
-        + (0 if args.no_dropout else (b * s * h)) # MLP -> Dropout
+        + (0 if args.no_dropout else (b * s * h))  # MLP -> Dropout
     ) * float(args.num_layers) / args.pipeline_parallel_size / args.tensor_parallel_size
 
-    first_stage_activation_memory = activation_memory * args.pipeline_parallel_size # 1F1B
+    first_stage_activation_memory = activation_memory * args.pipeline_parallel_size  # 1F1B
 
     first_stage_activation_memory += ((  # input ot embedding (pp size microbatch in flight)
         # 8 bytes (int64) input_ids
@@ -339,5 +345,3 @@ if __name__ == "__main__":
     print("========== total memory consumption ==========")
     print("memory used (per GPU) in the first stage: ", first_gb + first_ac_gb, "GB")
     print("==============================================\n\n")
-
-
