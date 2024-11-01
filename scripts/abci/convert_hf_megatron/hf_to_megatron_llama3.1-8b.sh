@@ -20,8 +20,8 @@ module load gcc/11.4.0
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=4
-PIPELINE_PARALLEL_SIZE=1
+TENSOR_PARALLEL_SIZE=2
+PIPELINE_PARALLEL_SIZE=4
 
 # model config
 HF_CHECKPOINT_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B
