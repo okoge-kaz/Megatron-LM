@@ -400,3 +400,7 @@ def throughput_calculator(
     samples_per_second: float = batch_size / elapsed_time_per_iter
 
     return samples_per_second
+
+
+def update_use_dist_ckpt(args):
+    args.use_dist_ckpt = args.ckpt_format != "torch"

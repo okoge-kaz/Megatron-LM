@@ -226,3 +226,4 @@ bookcorpus_data/
 # Data folder
 bookcorpus_data/
 local/
+.gitmodules

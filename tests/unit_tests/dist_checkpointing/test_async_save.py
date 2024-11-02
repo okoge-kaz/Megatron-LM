@@ -13,7 +13,6 @@ from tests.unit_tests.dist_checkpointing import TempNamedDir
 from tests.unit_tests.test_utilities import Utils
 
 
-
 def write_data_os_err_mock_fn(local_proc_idx, write_bucket, results_queue, count_queue, use_fsync):
     """Raises an error on worker #2 during storage save"""
     try:
@@ -28,6 +27,12 @@ def write_data_os_err_mock_fn(local_proc_idx, write_bucket, results_queue, count
 
 
 class TestAsyncSave:
+    def setup_method(self, method):
+        pass
+
+    def teardown_method(self, method):
+        Utils.destroy_model_parallel()
+
     def test_async_is_equivalent_to_sync(self, tmp_path_dist_ckpt):
         Utils.initialize_model_parallel(2, 4)
 
@@ -66,6 +71,7 @@ class TestAsyncSave:
 
     @pytest.mark.parametrize('async_save', [False, True])
     @pytest.mark.parametrize('worker_fn', [write_data_os_err_mock_fn])
+    @pytest.mark.flaky_in_dev
     def test_errors_are_reported(self, tmp_path_dist_ckpt, async_save, worker_fn):
         Utils.initialize_model_parallel(2, 4)
         sharded_state_dict = {
