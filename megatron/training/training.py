@@ -992,12 +992,8 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
     if wandb_writer and (iteration % args.tensorboard_log_interval == 0) and is_last_rank():
         wandb_stats["utils/steps-vs-samples"] = args.consumed_train_samples
         wandb_stats["utils/steps-vs-tokens"] = args.consumed_train_tokens
-
-        if args.log_learning_rate_to_tensorboard:
-            wandb_stats["utils/learning-rate"] = learning_rate
-
-        if args.log_batch_size_to_tensorboard:
-            wandb_stats["utils/batch-size"] = batch_size
+        wandb_stats["utils/learning-rate"] = learning_rate
+        wandb_stats["utils/batch-size"] = batch_size
 
         for key in loss_dict:
             wandb_stats[f"lm-loss-training/{key}"] = loss_dict[key]

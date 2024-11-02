@@ -1767,7 +1767,7 @@ def _add_data_args(parser):
                                 'GPTSentencePieceTokenizer',
                                 'HuggingFaceTokenizer',
                                 'Llama2Tokenizer',
-                                'Llama3Tokenizer_HF',
+                                'Llama3Tokenizer',
                                 'TikTokenizer',
                                 'NullTokenizer'],
                        help='What type of tokenizer to use.')
