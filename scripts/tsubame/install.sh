@@ -9,9 +9,9 @@
 # Load modules
 module use /gs/fs/tga-NII-LLM/modules/modulefiles
 
-module load ylab/cuda/12.1
-module load ylab/cudnn/8.9.7
-module load ylab/nccl/cuda-12.2/2.20.5
+module load ylab/cuda/12.4
+module load ylab/cudnn/9.1.0
+module load ylab/nccl/cuda-12.4/2.21.5
 module load ylab/hpcx/2.17.1
 module load ninja/1.11.1
 
@@ -20,6 +20,10 @@ source .env/bin/activate
 
 pip install --upgrade pip
 pip install --upgrade wheel cmake ninja packaging
+
+# install nvidia pytorch
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+
 # Install packages
 pip install -r requirements.txt
 
@@ -30,8 +34,8 @@ cd apex
 
 pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
 
-# transformer engine
-pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.9
+# transformer engine (v1.11 support flash-atten-v3)
+pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.11
 
 # flash-atten
 cd ..
@@ -40,6 +44,3 @@ cd flash-attention
 
 git checkout v2.5.8
 pip install -e .
-
-# huggingface install
-pip install transformers accelerate zarr tensorstore
