@@ -3,10 +3,10 @@
 source .env/bin/activate
 
 WORLD_SIZE=8
-TENSOR_PARALLEL_SIZE=1
-CONTEXT_PARALLEL_SIZE=4
-PIPELINE_PARALLEL_SIZE=2
-MICRO_BATCH_SIZE=1
+TENSOR_PARALLEL_SIZE=2
+CONTEXT_PARALLEL_SIZE=2
+PIPELINE_PARALLEL_SIZE=1
+MICRO_BATCH_SIZE=2
 DATA_PARALLEL_SIZE=$(($WORLD_SIZE / ($TENSOR_PARALLEL_SIZE * $CONTEXT_PARALLEL_SIZE * $PIPELINE_PARALLEL_SIZE)))
 
 echo "DATA_PARALLEL_SIZE: $DATA_PARALLEL_SIZE"
@@ -14,7 +14,7 @@ echo "DATA_PARALLEL_SIZE: $DATA_PARALLEL_SIZE"
 python tools/memory_estimate/memory_consumption_estimator.py \
   --hidden-size 4096 \
   --ffn-hidden-size 14336 \
-  --seq-length 32768 \
+  --seq-length 8192 \
   --num-layers 32 \
   --num-attention-heads 32 \
   --group-query-attention \

@@ -1,9 +1,9 @@
 #!/bin/sh
 #$ -cwd
-#$ -l node_f=1
-#$ -l h_rt=00:00:30:00
-#$ -o outputs/Llama-3.1-8b-MLSys25/$JOB_ID.log
-#$ -e outputs/Llama-3.1-8b-MLSys25/$JOB_ID.log
+#$ -l node_f=2
+#$ -l h_rt=00:0:30:00
+#$ -o outputs/Llama-3.1-8b/$JOB_ID.log
+#$ -e outputs/Llama-3.1-8b/$JOB_ID.log
 #$ -p -3
 
 # Load modules
@@ -15,7 +15,6 @@ module load ylab/nccl/cuda-12.4/2.21.5
 module load ylab/hpcx/2.17.1
 module load ninja/1.11.1
 
-# swich virtual env
 source .env/bin/activate
 
 # distributed settings
@@ -49,7 +48,7 @@ SEQ_LENGTH=8192
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=2
-CONTEXT_PARALLEL_SIZE=1
+CONTEXT_PARALLEL_SIZE=2
 PIPELINE_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
@@ -57,7 +56,7 @@ PIPLINE_MODEL_CHUNKS=1
 LAYERS_PER_VIRTUAL_PIPELINE_STAGE=$((${NUM_LAYERS} / ${PIPELINE_PARALLEL_SIZE} / ${PIPLINE_MODEL_CHUNKS}))
 
 # training config
-MICRO_BATCH_SIZE=1
+MICRO_BATCH_SIZE=4
 GLOBAL_BATCH_SIZE=1024
 TRAIN_STEPS=25000
 LR_DECAY_ITERS=25000
@@ -76,6 +75,7 @@ CHECKPOINT_SAVE_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b/tp${TENSOR_PARAL
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
 # data config
+DATA_CACHE_PATH="/gs/fs/tgh-24IDN/datasets/cache"
 TRAIN_DATA_PATH=""
 
 # ja wikipedia
@@ -380,6 +380,7 @@ mpirun -np $NUM_GPUS \
   --save ${CHECKPOINT_SAVE_DIR} \
   --data-path ${TRAIN_DATA_PATH} \
   --split 990,10,0 \
+  --data-cache-path ${DATA_CACHE_PATH} \
   --distributed-backend nccl \
   --lr ${LR} \
   --min-lr ${MIN_LR} \
@@ -426,6 +427,8 @@ mpirun -np $NUM_GPUS \
   ${TIMER_ARGS} \
   --log-straggler \
   --disable-straggler-on-startup \
+  --dist-ckpt-format "torch_dist" \
+  --async-save \
   --wandb-name ${JOB_NAME} \
   --wandb-project "GTC25" \
   --wandb-entity "okoge"

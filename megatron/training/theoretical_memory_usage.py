@@ -5,10 +5,10 @@
 
 import math
 
-NUM_BYTES_IN_MEGABYTE = 1024 * 1024
+NUM_BYTES_IN_GIGA_BYTE = 1024 * 1024 * 1024
 
 
-def compute_weight_and_optimizer_memory(args, verbose=False):
+def compute_weight_and_optimizer_memory(args, verbose=True):
     # Attention projection size.
     query_projection_size = args.kv_channels * args.num_attention_heads
     query_projection_to_hidden_size_ratio = query_projection_size / args.hidden_size
@@ -32,11 +32,13 @@ def compute_weight_and_optimizer_memory(args, verbose=False):
             # MLP.
             + ((args.ffn_hidden_size / args.hidden_size) * num_experts * gated_linear_multiplier)
             # Transformer layernorms.
-            + (2 / args.hidden_size)
-            # Final layernorm.
-            + (1 / (args.num_layers * args.hidden_size))
+            + (1 / args.hidden_size)
         )
+    ) + (
+        # final layer norm
+        args.hidden_size
     )
+
     embedding_size = args.hidden_size * args.padded_vocab_size
     if args.untie_embeddings_and_output_weights:
         num_parameters_in_embedding_layers = 2 * embedding_size
@@ -46,26 +48,29 @@ def compute_weight_and_optimizer_memory(args, verbose=False):
     if verbose:
         print(
             f"Number of parameters in transformer layers in billions: "
-            f"{num_parameters_in_transformer_layers / 10**9: .2f}"
+            f"{num_parameters_in_transformer_layers / 10**9}"
         )
         print(
             f"Number of parameters in embedding layers in billions: "
-            f"{num_parameters_in_embedding_layers / 10**9:.2f}"
+            f"{num_parameters_in_embedding_layers / 10**9}"
         )
-        print(f"Total number of parameters in billions: {num_total_parameters / 10**9:.2f}")
+        print(f"Total number of parameters in billions: {num_total_parameters / 10**9}")
 
     # Most loaded model shard has (1/pp_size transformer layers + 1 embedding layer) / tp_size.
     num_parameters_on_most_loaded_model_shard = (
-        (num_parameters_in_transformer_layers / args.pipeline_model_parallel_size) + embedding_size
+        (    # - last layer norm
+            (num_parameters_in_transformer_layers - args.hidden_size) / args.pipeline_model_parallel_size
+        ) + embedding_size  # (embedding layer) for first stage
     ) / args.tensor_model_parallel_size
     if args.untie_embeddings_and_output_weights and args.pipeline_model_parallel_size == 1:
         num_parameters_on_most_loaded_model_shard += (
             embedding_size / args.tensor_model_parallel_size
         )
+        num_parameters_on_most_loaded_model_shard += args.hidden_size  # last layer norm
     if verbose:
         print(
             f"Number of parameters in most loaded shard in billions: "
-            f"{num_parameters_on_most_loaded_model_shard / 10**9:.4f}"
+            f"{num_parameters_on_most_loaded_model_shard / 10**9}"
         )
 
     if args.pipeline_model_parallel_size > 1:
@@ -76,11 +81,11 @@ def compute_weight_and_optimizer_memory(args, verbose=False):
         if verbose:
             print(
                 f"Number of parameters in other shards in billions: "
-                f"{num_parameters_on_other_model_shards / 10**9:.4f}"
+                f"{num_parameters_on_other_model_shards / 10**9}"
             )
 
     num_bytes_per_parameter = (
-        18 if not args.use_distributed_optimizer else 6 + (12 / args.data_parallel_size)
+        18 if not args.use_distributed_optimizer else 6 + (12 / args.data_parallel_size / args.context_parallel_size)
     )
     weight_and_optimizer_memory = (
         num_parameters_on_most_loaded_model_shard * num_bytes_per_parameter
@@ -98,24 +103,76 @@ def compute_activation_memory(args, num_microbatches, verbose=False):
     # different from hidden_size.
 
     # Memory footprint from transformer layer (self-attention and MLP).
-    activation_memory = (args.seq_length * args.micro_batch_size * args.hidden_size) * (
-        18 + (4 * (args.ffn_hidden_size / args.hidden_size))
+    s = args.seq_length
+    h = args.hidden_size
+    b = args.micro_batch_size
+    a = args.num_attention_heads
+    k = args.num_query_groups
+
+    s = s / args.context_parallel_size
+    args.no_dropout = (abs(args.attention_dropout) <= 1e-8) and (abs(args.hidden_dropout) <= 1e-8)
+    args.selective_activation_recomputation = (
+        args.recompute_granularity == 'selective'
+    )
+    print(f"INFO: No Dropout: {args.no_dropout}", flush=True)
+
+    activation_memory = (
+        # transformer layer
+        2 * s * b * h  # LayerNorm
+        + (
+            # attention
+            2 * s * b * h  # x -> Q, K, V
+            + (2 * s * b * h)  # Q * K^T -> attention scores (Q)
+            + (2 * s * b * h) * (k / a)  # Q * K^T -> attention scores (K) (grouped query attention)
+            + (  # Q*K^T -> softmax(Q*K^T)
+                0 if (
+                    args.selective_activation_recomputation or args.use_flash_attn
+                ) else (2 * b * s * s * a)
+            )
+            + (  # softmax(Q*K^T) -> Dropout
+                0 if args.no_dropout else 0 if (
+                    args.selective_activation_recomputation or args.use_flash_attn
+                ) else (1 * b * s * s * a)
+            )
+            + ((2 * b * s * h) * (k / a))  # attention scores * V -> attention output (V) (grouped query attention)
+            + (  # Dropout(softmax(Q*K^T)) * V -> attention output (Dropout)
+                0 if (
+                    args.selective_activation_recomputation or args.use_flash_attn
+                ) else (2 * b * a * s * s)
+            )
+            + (2 * b * s * h)  # attention output -> attention output (Linear)
+        )
+        + (0 if args.no_dropout else (b * s * h))  # attention output -> Dropout
+        + (2 * b * s * h)  # Dropout(attention output -> LayerNorm
+        + (
+            # MLP
+            # SwiGLU
+            # self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
+            2 * b * s * h  # up_proj & gate_proj
+            + 2 * b * s * args.ffn_hidden_size  # act_fn (up) -> GLU(act_fn)
+            + 2 * b * s * args.ffn_hidden_size  # act_fn act_fn -> x
+            + 2 * b * s * args.ffn_hidden_size  # act_fn (gate) -> x
+            + 2 * b * s * args.ffn_hidden_size  # act_fn (down)
+        )
+        + (0 if args.no_dropout else (b * s * h))  # MLP -> Dropout
     )
     if verbose:
         print(
             f"Activation memory footprint per transformer layer: "
-            f"{activation_memory / NUM_BYTES_IN_MEGABYTE / args.tensor_model_parallel_size:.1f} MB"
+            f"{activation_memory / NUM_BYTES_IN_GIGA_BYTE / args.tensor_model_parallel_size} GB"
         )
-    activation_memory *= args.num_layers
+    activation_memory = activation_memory * args.num_layers / args.tensor_model_parallel_size
 
     # Now add activation memory required for input embeddings, last LayerNorm and output layer.
 
     # Input to embedding (pp_size microbatches in flight).
     activation_memory += (
-        8 * args.seq_length * args.micro_batch_size * args.pipeline_model_parallel_size
-    )
+        # 8 bytes (int64)
+        8 * s * b * h * args.pipeline_model_parallel_size
+    ) / args.tensor_model_parallel_size
+
     # Dropout in embedding layer (pp_size microbatches in flight).
-    activation_memory += (
+    activation_memory += 0 if args.no_dropout else (
         args.seq_length
         * args.micro_batch_size
         * args.hidden_size
@@ -152,36 +209,36 @@ def compute_activation_memory(args, num_microbatches, verbose=False):
     if args.pipeline_model_parallel_size == 1:
         # Inputs to output layer and CE loss.
         activation_memory += (
-            args.seq_length
-            * args.micro_batch_size
-            * args.hidden_size
-            * 4
-            * (1 + (args.padded_vocab_size / args.hidden_size))
-        )
+            # lm-head cross entropy (FP32)
+            # output layer (layer norm) + output layer (linear)
+            4 * s * b * h * (1 + args.padded_vocab_size / h)
+        ) / args.tensor_model_parallel_size
 
     # Activation memory is partitioned by TP size due to tensor and sequence model parallelism.
-    return activation_memory / args.tensor_model_parallel_size
+    return activation_memory
 
 
-def report_theoretical_memory(args, num_microbatches=None, verbose=False):
+def report_theoretical_memory(args, num_microbatches=None, verbose=True):
     weight_and_optimizer_memory = (
-        compute_weight_and_optimizer_memory(args, verbose=verbose) / NUM_BYTES_IN_MEGABYTE
+        compute_weight_and_optimizer_memory(args, verbose=verbose) / NUM_BYTES_IN_GIGA_BYTE
     )
 
     # Formulae here assume sequence parallelism and selective activation recomputation.
-    if not args.sequence_parallel or args.recompute_granularity != 'selective':
+    if not (
+        args.recompute_granularity == 'selective' or args.use_flash_attn is True
+    ):
         print(
-            f"Theoretical memory footprints: weight and optimizer={weight_and_optimizer_memory:.2f} MB"
+            f"Theoretical memory footprints: weight and optimizer={weight_and_optimizer_memory} GB"
         )
         return
 
     activation_memory = (
         compute_activation_memory(args, num_microbatches=num_microbatches, verbose=verbose)
-        / NUM_BYTES_IN_MEGABYTE
+        / NUM_BYTES_IN_GIGA_BYTE
     )
     total_memory = weight_and_optimizer_memory + activation_memory
 
     print(
-        f"Theoretical memory footprints: weight and optimizer={weight_and_optimizer_memory:.2f} MB, "
-        f"activation={activation_memory:.2f} MB, total={total_memory:.2f} MB\n"
+        f"Theoretical memory footprints: weight and optimizer={weight_and_optimizer_memory} GB, "
+        f"activation={activation_memory} GB, total={total_memory} GB\n"
     )
