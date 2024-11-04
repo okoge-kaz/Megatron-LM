@@ -42,4 +42,5 @@ python tools/checkpoint/convert.py \
   --save-dir ${MEGATRON_CHECKPOINT_DIR} \
   --tokenizer-model ${TOKENIZER_MODEL} \
   --bf16 \
-  --saver-transformer-impl "transformer_engine"
+  --saver-transformer-impl "transformer_engine" \
+  --megatron-path "/gs/bs/tga-NII-LLM/src/Megatron-LM-v0.9"

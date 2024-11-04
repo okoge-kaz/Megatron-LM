@@ -4,6 +4,8 @@ import argparse
 import importlib
 import torch.multiprocessing as mp
 import sys
+import traceback
+import os
 
 # A loader is a python file with at least two functions
 # - add_arguments - takes in a parser and adds any arguments needed
@@ -90,15 +92,18 @@ import sys
 
 def load_plugin(plugin_type, name):
     module_name = f"{plugin_type}_{name}"
+    print(f"Loading {plugin_type} plugin {module_name}...", flush=True)
     try:
         plugin = importlib.import_module(module_name)
-    except ModuleNotFoundError as e:
-        print(e)
+    except Exception as e:
+        print((f"DEBUG 1: Error: {e}"), flush=True)
+        traceback.print_exc()
         module_name = name
         try:
             plugin = importlib.import_module(module_name)
-        except ModuleNotFoundError as e:
-            print(e)
+        except Exception as e:
+            print((f"DEBUG 2: Error: {e}"), flush=True)
+            traceback.print_exc()
             sys.exit(f"Unable to load {plugin_type} plugin {name}. Exiting.")
 
     if not hasattr(plugin, 'add_arguments'):
@@ -127,10 +132,25 @@ def main():
     parser.add_argument('--no-checking', action='store_false',
                         help='Do not perform checking on the name and ordering of weights',
                         dest='checking')
+    parser.add_argument('--debug', action='store_true')
 
     known_args, _ = parser.parse_known_args()
+
+    # load megatron
+    megatron_path = os.path.abspath(path=os.path.join(
+        os.path.dirname(__file__), os.path.pardir, os.path.pardir)
+    )
+    print(f"Megatron-LM path={megatron_path}", flush=True)
+    sys.path.append(megatron_path)
+
+    if known_args.debug:
+        print(f"DEBUG: saver={known_args.saver}, loader={known_args.loader}", flush=True)
     loader = load_plugin('loader', known_args.loader)
+    if known_args.debug:
+        print(f"DEBUG: loader={loader}, Done", flush=True)
     saver = load_plugin('saver', known_args.saver)
+    if known_args.debug:
+        print(f"DEBUG: saver={saver}, Done", flush=True)
 
     loader.add_arguments(parser)
     saver.add_arguments(parser)
