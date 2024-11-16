@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
-#$ -l node_f=4
-#$ -l h_rt=1:00:00
+#$ -l node_f=16
+#$ -l h_rt=0:30:00
 #$ -o outputs/mixtral-8x7b/$JOB_ID.log
 #$ -e outputs/mixtral-8x7b/$JOB_ID.log
 #$ -p -4
@@ -51,16 +51,16 @@ NUM_EXPERT_TOP_K=2
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=4
-CONTEXT_PARALLEL_SIZE=2
+CONTEXT_PARALLEL_SIZE=1
 EXPERT_PARALLEL_SIZE=1
-PIPELINE_PARALLEL_SIZE=1
+PIPELINE_PARALLEL_SIZE=2
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE} * ${CONTEXT_PARALLEL_SIZE} * ${EXPERT_PARALLEL_SIZE})))
 
 PIPLINE_MODEL_CHUNKS=1
 LAYERS_PER_VIRTUAL_PIPELINE_STAGE=$((${NUM_LAYERS} / ${PIPELINE_PARALLEL_SIZE} / ${PIPLINE_MODEL_CHUNKS}))
 
-MOE_GROUPED_GEMM=True
-if [[ ${MOE_GROUPED_GEMM} == "True" ]]; then
+MOE_GROUPED_GEMM_FLAG=True
+if [[ ${MOE_GROUPED_GEMM_FLAG} == "True" ]]; then
   MOE_GROUPED_GEMM="--moe-grouped-gemm"
 else
   MOE_GROUPED_GEMM=""
@@ -80,10 +80,10 @@ GRAD_CLIP=1
 
 # model config
 TOKENIZER_MODEL=/gs/bs/tga-NII-LLM/hf-checkpoints/Mixtral-8x7B-v0.1/tokenizer.model
-CHECKPOINT_DIR=/gs/bs/tgh-NII-LLM/checkpoints/hf-to-megatron/mixtral-8x7b-v0.1/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ep${EXPERT_PARALLEL_SIZE}
+CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/mixtral-8x7b-v0.1/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ep${EXPERT_PARALLEL_SIZE}
 CHECKPOINT_SAVE_DIR=/gs/bs/tga-NII-LLM/checkpoints/mixtral-8x7b-v0.1/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}-v0.9.0
 
-if [[ ${MOE_GROUPED_GEMM} == "True" ]]; then
+if [[ ${MOE_GROUPED_GEMM_FLAG} == "True" ]]; then
   CHECKPOINT_DIR="${CHECKPOINT_DIR}-grouped-gemm"
 fi
 
