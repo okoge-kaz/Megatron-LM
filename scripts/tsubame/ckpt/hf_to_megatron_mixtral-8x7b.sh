@@ -19,12 +19,21 @@ module load ninja/1.11.1
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=8
-PIPELINE_PARALLEL_SIZE=4
+TENSOR_PARALLEL_SIZE=1
+PIPELINE_PARALLEL_SIZE=2
+EXPART_PARALLEL_SIZE=4
+USE_GROUPED=True
 
 # model config
 HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/hf-checkpoints/Mixtral-8x7B-v0.1
-MEGATRON_CHECKPOINT_DIR=/gs/bs/tgh-NII-LLM/checkpoints/hf-to-megatron/mixtral-8x7b-v0.1/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/mixtral-8x7b-v0.1/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ep${EXPART_PARALLEL_SIZE}
+
+# grouped GeMM
+GROUPED_GEMM=""
+if [ ${USE_GROUPED} = "True" ]; then
+  MEGATRON_CHECKPOINT_DIR=${MEGATRON_CHECKPOINT_DIR}-grouped-gemm
+  GROUPED_GEMM="--grouped-gemm"
+fi
 
 mkdir -p ${MEGATRON_CHECKPOINT_DIR}
 
@@ -40,7 +49,9 @@ python tools/checkpoint/convert.py \
   --saver mcore \
   --target-tensor-parallel-size ${TENSOR_PARALLEL_SIZE} \
   --target-pipeline-parallel-size ${PIPELINE_PARALLEL_SIZE} \
+  --target-expert-parallel-size ${EXPART_PARALLEL_SIZE} \
   --load-dir ${HF_CHECKPOINT_DIR} \
   --save-dir ${MEGATRON_CHECKPOINT_DIR} \
   --tokenizer-model ${TOKENIZER_MODEL} \
-  --saver-transformer-impl "transformer_engine"
+  --saver-transformer-impl "transformer_engine" \
+  ${GROUPED_GEMM} \

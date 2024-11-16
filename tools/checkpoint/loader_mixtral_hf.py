@@ -21,6 +21,8 @@ def add_arguments(parser):
                        help='Sentencepiece tokenizer model.')
     group.add_argument('--megatron-path', type=str, default=None,
                        help='Base directory of deepspeed repository')
+    group.add_argument('--grouped-gemm', action='store_true', default=False,
+                       help='Use grouped gemm for linear layers.')
 
 
 def load_args_from_checkpoint(args):
@@ -266,6 +268,7 @@ def _load_checkpoint(queue, args):
     md.consumed_valid_samples = 0
     md.num_experts = margs.num_experts
     md.rotary_base = margs.rotary_base
+    md.grouped_gemm = args.grouped_gemm
 
     # Get first pipe stage.
     mpu.set_tensor_model_parallel_rank(0)

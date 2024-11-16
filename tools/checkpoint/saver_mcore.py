@@ -205,7 +205,7 @@ class MCoreTESetter(MCoreSetter):
 class MCoreMoETESetter(MCoreSetter):
 
     @classmethod
-    def set_layer(
+    def set_layer(  # type: ignore
         cls,
         model,
         layer_idx,
@@ -222,6 +222,7 @@ class MCoreMoETESetter(MCoreSetter):
         mlp_fc1_bias=None,
         mlp_fc2_weight=None,
         mlp_fc2_bias=None,
+        grouped_gemm: bool = False,
     ):
 
         block = cls.get_transformer_block(model)
@@ -245,10 +246,22 @@ class MCoreMoETESetter(MCoreSetter):
 
         cls.set_tensor(l.mlp.router.weight, router_weight)
 
-        num_local_experts = mlp_fc1_weight.shape[0]
-        for expert_idx in range(num_local_experts):
-            cls.set_tensor(l.mlp.experts.local_experts[expert_idx].linear_fc1.weight, mlp_fc1_weight[expert_idx])
-            cls.set_tensor(l.mlp.experts.local_experts[expert_idx].linear_fc2.weight, mlp_fc2_weight[expert_idx])
+        if grouped_gemm:
+            num_local_experts = mlp_fc1_weight.shape[0] # type: ignore
+            for expert_idx in range(num_local_experts):
+                cls.set_tensor(
+                    getattr(l.mlp.experts.linear_fc1, f"weight{expert_idx}"),
+                    mlp_fc1_weight[expert_idx],  # type: ignore
+                )
+                cls.set_tensor(
+                    getattr(l.mlp.experts.linear_fc2, f"weight{expert_idx}"),
+                    mlp_fc2_weight[expert_idx],  # type: ignore
+                )
+        else:
+            num_local_experts = mlp_fc1_weight.shape[0]  # type: ignore
+            for expert_idx in range(num_local_experts):
+                cls.set_tensor(l.mlp.experts.local_experts[expert_idx].linear_fc1.weight, mlp_fc1_weight[expert_idx])  # type: ignore
+                cls.set_tensor(l.mlp.experts.local_experts[expert_idx].linear_fc2.weight, mlp_fc2_weight[expert_idx])  # type: ignore
 
 
 def get_model_setter(model_type, transformer_impl, num_experts=0):
@@ -405,6 +418,9 @@ def save_checkpoint(queue, args):
     if md.model_type == 'BERT' and not md.bert_binary_head:
         sys.argv.append('--bert-no-binary-head')
 
+    if md.grouped_gemm:
+        sys.argv.append('--moe-grouped-gemm')
+
     margs = parse_args()
 
     if hasattr(md, 'checkpoint_args'):
@@ -456,6 +472,8 @@ def save_checkpoint(queue, args):
     margs.tensorboard_dir = None
     margs.tokenizer_model = None
     margs.transformer_impl = args.saver_transformer_impl
+    if args.grouped_gemm:
+        margs.moe_grouped_gemm = True
 
     set_global_variables(margs, build_tokenizer=False)
 
@@ -681,7 +699,7 @@ def save_checkpoint(queue, args):
                             "router_weight":  router
                         })
                     model = get_local_model(pp_rank, ep_rank, tp_rank)
-                    setter.set_layer(model, layer_id, **params_dict)
+                    setter.set_layer(model, layer_id, **params_dict, grouped_gemm=md.grouped_gemm)
 
             total_layer_num = total_layer_num + 1
             check_message(msg)

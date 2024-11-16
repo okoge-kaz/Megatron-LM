@@ -94,7 +94,7 @@ def model_provider(pre_process=True, post_process=True) -> Union[GPTModel, megat
                 raise RuntimeError("--fp8-param-gather requires `fp8_model_init` from TransformerEngine, but not found.")
 
         with build_model_context(**build_model_context_args):
-            model = GPTModel(
+            model = GPTModel(  # type: ignore
                 config=config,
                 transformer_layer_spec=transformer_layer_spec,
                 vocab_size=args.padded_vocab_size,
@@ -107,13 +107,13 @@ def model_provider(pre_process=True, post_process=True) -> Union[GPTModel, megat
                 position_embedding_type=args.position_embedding_type,
                 rotary_percent=args.rotary_percent,
                 rotary_base=args.rotary_base,
-            use_embedding_scaling=args.use_embedding_scaling,
-            rope_scaling={
-                "factor": args.rope_factor,
-                "low_freq_factor": args.rope_low_freq_factor,
-                "high_freq_factor": args.rope_high_freq_factor,
-                "original_max_positional_embeddings": args.rope_original_max_positional_embeddings,
-            } if args.rope_factor is not None else None
+                use_embedding_scaling=args.use_embedding_scaling,
+                rope_scaling={
+                    "factor": args.rope_factor,
+                    "low_freq_factor": args.rope_low_freq_factor,
+                    "high_freq_factor": args.rope_high_freq_factor,
+                    "original_max_positional_embeddings": args.rope_original_max_positional_embeddings,
+                } if args.rope_factor is not None else None
             )
 
     return model
