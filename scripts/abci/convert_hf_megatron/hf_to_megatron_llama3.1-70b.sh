@@ -1,36 +1,40 @@
-#!/bin/bash
-#$ -l rt_AF=1
-#$ -l h_rt=0:03:00:00
-#$ -j y
-#$ -o outputs/hf-to-megatron/
-#$ -cwd
+#!/bin/sh
+#PBS -q rt_HF
+#PBS -N convert
+#PBS -l select=1:ncpus=192
+#PBS -l walltime=1:00:00
+#PBS -j oe
+#PBS -o outputs/hf-megatron/convert_llama3.1-70b/$PBS_JOBID.log
+#PBS -P gcg51558
 
-# Load modules
+cd $PBS_O_WORKDIR
+mkdir -p outputs/hf-megatron/convert_llama3.1-70b/
+
+echo "Nodes allocated to this job:"
+cat $PBS_NODEFILE
+
 source /etc/profile.d/modules.sh
 module use /groups/gag51395/modules/modulefiles
 
-module load cuda/12.1/12.1.1
-module load cudnn/cuda-12.1/9.0.0
-module load nccl/2.17/2.17.1-1
-module load hpcx/2.12
-module load gcc/11.4.0
+module load cuda/12.4
+module load cudnn/9.1.1
+module load nccl/2.21.5
+module load hpcx/2.18.1
 
-
-# swich virtual env
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=8
+TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=4
 
 # model config
-HF_CHECKPOINT_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-70B
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/checkpoints/hf-to-megatron/Llama-3.1-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+HF_CHECKPOINT_DIR=/groups/gag51395/hf_checkpoints/Meta-Llama-3.1-70B
+MEGATRON_CHECKPOINT_DIR=/groups/gag51395/checkpoints/hf-to-megatron/Llama-3.1-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
 
 mkdir -p ${MEGATRON_CHECKPOINT_DIR}
 
 # tokenizer config
-TOKENIZER_MODEL=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-70B/tokenizer.json
+TOKENIZER_MODEL=/groups/gag51395/hf_checkpoints/Meta-Llama-3.1-70B/tokenizer.json
 
 # convert
 python tools/checkpoint/convert.py \
