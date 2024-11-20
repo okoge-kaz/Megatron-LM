@@ -418,7 +418,7 @@ def save_checkpoint(queue, args):
     if md.model_type == 'BERT' and not md.bert_binary_head:
         sys.argv.append('--bert-no-binary-head')
 
-    if md.grouped_gemm:
+    if hasattr(md, 'grouped_gemm') and md.grouped_gemm:
         sys.argv.append('--moe-grouped-gemm')
 
     margs = parse_args()
@@ -472,7 +472,7 @@ def save_checkpoint(queue, args):
     margs.tensorboard_dir = None
     margs.tokenizer_model = None
     margs.transformer_impl = args.saver_transformer_impl
-    if args.grouped_gemm:
+    if hasattr(args, 'grouped_gemm') and args.grouped_gemm:
         margs.moe_grouped_gemm = True
 
     set_global_variables(margs, build_tokenizer=False)
@@ -699,7 +699,13 @@ def save_checkpoint(queue, args):
                             "router_weight":  router
                         })
                     model = get_local_model(pp_rank, ep_rank, tp_rank)
-                    setter.set_layer(model, layer_id, **params_dict, grouped_gemm=md.grouped_gemm)
+                    if hasattr(md, 'grouped_gemm') and md.grouped_gemm:
+                        setter.set_layer(
+                            model, layer_id, **params_dict,
+                            grouped_gemm=md.grouped_gemm
+                        )
+                    else:
+                        setter.set_layer(model, layer_id, **params_dict)
 
             total_layer_num = total_layer_num + 1
             check_message(msg)
