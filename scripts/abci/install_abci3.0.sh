@@ -1,10 +1,11 @@
 #!/bin/sh
 #PBS -q rt_HF
 #PBS -N install
-#PBS -l select=1:ncpus=192
+#PBS -l select=2:ncpus=192:ngpus=8
 #PBS -l walltime=1:00:00
 #PBS -j oe
-#PBS -o outpus/install/
+#PBS -koed
+#PBS -o outputs/install/
 #PBS -P gag51395
 
 cd $PBS_O_WORKDIR
@@ -37,4 +38,4 @@ cd apex
 pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
 
 # transformer engine (v1.11 support flash-atten-v3)
-pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.11
+pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.12

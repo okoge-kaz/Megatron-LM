@@ -1,10 +1,11 @@
 #!/bin/sh
 #PBS -q rt_HF
 #PBS -N llama-3.1-8b
-#PBS -l select=1:ncpus=192:ngpus=8
-#PBS -l walltime=0:30:00
+#PBS -l select=2:ncpus=192:ngpus=8
+#PBS -l walltime=1:00:00
 #PBS -j oe
 #PBS -koed
+#PBS -V
 #PBS -o outputs/Llama-3.1-8B/
 #PBS -P gcg51558
 
@@ -177,7 +178,22 @@ mpirun -np $NUM_GPUS \
   -x NCCL_IB_TIMEOUT=22 \
   -x NCCL_DEBUG=INFO \
   -x LD_LIBRARY_PATH \
+  -x LIBRARY_PATH \
   -x PATH \
+  -x INCLUDE \
+  -x CUDA_HOME \
+  -x CUDA_PATH \
+  -x CUDA_NVCC_EXECUTABLE \
+  -x CPATH \
+  -x CUDNN_PATH \
+  -x CUDNN_INCLUDE_DIR \
+  -x CUDNN_LIBRARY_DIR \
+  -x CUDNN_ROOT_DIR \
+  -x NCCL_HOME \
+  -x NCCL_INCLUDE_DIR \
+  -x NCCL_LIBRARY_DIR \
+  -x OMPI_HOME \
+  -x MPI_HOME \
   -bind-to none \
   python pretrain_gpt.py \
   --tensor-model-parallel-size ${TENSOR_PARALLEL_SIZE} \
@@ -200,8 +216,6 @@ mpirun -np $NUM_GPUS \
   --train-iters ${TRAIN_STEPS} \
   --tokenizer-type Llama3Tokenizer \
   --tokenizer-model ${TOKENIZER_MODEL} \
-  --reset-position-ids \
-  --reset-attention-mask \
   ${CHECKPOINT_ARGS} \
   --save ${CHECKPOINT_SAVE_DIR} \
   --data-path ${TRAIN_DATA_PATH} \

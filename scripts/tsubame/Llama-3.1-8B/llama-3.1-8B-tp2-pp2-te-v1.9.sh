@@ -350,7 +350,22 @@ mpirun -np $NUM_GPUS \
   -x TORCH_NCCL_AVOID_RECORD_STREAMS=1 \
   -x NCCL_IB_TIMEOUT=22 \
   -x LD_LIBRARY_PATH \
+  -x LIBRARY_PATH \
   -x PATH \
+  -x INCLUDE \
+  -x CUDA_HOME \
+  -x CUDA_PATH \
+  -x CUDA_NVCC_EXECUTABLE \
+  -x CPATH \
+  -x CUDNN_PATH \
+  -x CUDNN_INCLUDE_DIR \
+  -x CUDNN_LIBRARY_DIR \
+  -x CUDNN_ROOT_DIR \
+  -x NCCL_HOME \
+  -x NCCL_INCLUDE_DIR \
+  -x NCCL_LIBRARY_DIR \
+  -x OMPI_HOME \
+  -x MPI_HOME \
   -bind-to none \
   python pretrain_gpt.py \
   --tensor-model-parallel-size ${TENSOR_PARALLEL_SIZE} \
