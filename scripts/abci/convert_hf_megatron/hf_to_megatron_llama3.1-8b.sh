@@ -1,13 +1,15 @@
 #!/bin/sh
 #PBS -q rt_HF
 #PBS -N convert
-#PBS -l select=1:ncpus=192
+#PBS -l select=1:ncpus=192:ngpus=8
 #PBS -l walltime=1:00:00
 #PBS -j oe
+#PBS -koed
+#PBS -o outputs/hf-megatron/convert_llama3.1-8b/
 #PBS -P gcg51558
 
 cd $PBS_O_WORKDIR
-mkdir -p outputs/hf-megatron
+mkdir -p outputs/hf-megatron/convert_llama3.1-8b
 
 echo "Nodes allocated to this job:"
 cat $PBS_NODEFILE
