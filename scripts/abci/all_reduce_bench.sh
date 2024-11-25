@@ -5,6 +5,7 @@
 #PBS -l walltime=1:00:00
 #PBS -j oe
 #PBS -koed
+#PBS -V
 #PBS -o outputs/all_reduce_bench
 #PBS -P gcg51558
 
@@ -54,6 +55,21 @@ mpirun -np $NUM_GPUS \
   -x MASTER_PORT=$MASTER_PORT \
   -x CUDA_DEVICE_MAX_CONNECTIONS=1 \
   -x LD_LIBRARY_PATH \
+  -x LIBRARY_PATH \
   -x PATH \
+  -x INCLUDE \
+  -x CUDA_HOME \
+  -x CUDA_PATH \
+  -x CUDA_NVCC_EXECUTABLE \
+  -x CPATH \
+  -x CUDNN_PATH \
+  -x CUDNN_INCLUDE_DIR \
+  -x CUDNN_LIBRARY_DIR \
+  -x CUDNN_ROOT_DIR \
+  -x NCCL_HOME \
+  -x NCCL_INCLUDE_DIR \
+  -x NCCL_LIBRARY_DIR \
+  -x OMPI_HOME \
+  -x MPI_HOME \
   -bind-to none \
   python scripts/gcp/all_reduce_bench.py
