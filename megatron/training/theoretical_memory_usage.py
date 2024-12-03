@@ -84,8 +84,11 @@ def compute_weight_and_optimizer_memory(args, verbose=True):
                 f"{num_parameters_on_other_model_shards / 10**9}"
             )
 
+    gradient_accumulation_factor = 4 if args.accumulate_allreduce_grads_in_fp32 else 2
+    # parameters: bf16 + gradients: fp32
+    # optimizer states: param: fp32, momentum: fp32, variance: fp32
     num_bytes_per_parameter = (
-        18 if not args.use_distributed_optimizer else 6 + (12 / args.data_parallel_size / args.context_parallel_size)
+        (2 + gradient_accumulation_factor + (4 + 4 + 4)) if not args.use_distributed_optimizer else (2 + gradient_accumulation_factor) + (12 / args.data_parallel_size / args.context_parallel_size)
     )
     weight_and_optimizer_memory = (
         num_parameters_on_most_loaded_model_shard * num_bytes_per_parameter
@@ -110,11 +113,10 @@ def compute_activation_memory(args, num_microbatches, verbose=False):
     k = args.num_query_groups
 
     s = s / args.context_parallel_size
-    args.no_dropout = (abs(args.attention_dropout) <= 1e-8) and (abs(args.hidden_dropout) <= 1e-8)
     args.selective_activation_recomputation = (
         args.recompute_granularity == 'selective'
     )
-    print(f"INFO: No Dropout: {args.no_dropout}", flush=True)
+    num_experts = 1 if args.num_experts is None else args.num_experts
 
     activation_memory = (
         # transformer layer
@@ -130,7 +132,7 @@ def compute_activation_memory(args, num_microbatches, verbose=False):
                 ) else (2 * b * s * s * a)
             )
             + (  # softmax(Q*K^T) -> Dropout
-                0 if args.no_dropout else 0 if (
+                0 if args.attention_dropout == 0.0 else 0 if (
                     args.selective_activation_recomputation or args.use_flash_attn
                 ) else (1 * b * s * s * a)
             )
@@ -142,7 +144,7 @@ def compute_activation_memory(args, num_microbatches, verbose=False):
             )
             + (2 * b * s * h)  # attention output -> attention output (Linear)
         )
-        + (0 if args.no_dropout else (b * s * h))  # attention output -> Dropout
+        + (0 if args.hidden_dropout == 0.0 else (b * s * h))  # attention output -> Dropout
         + (2 * b * s * h)  # Dropout(attention output -> LayerNorm
         + (
             # MLP
@@ -154,7 +156,7 @@ def compute_activation_memory(args, num_microbatches, verbose=False):
             + 2 * b * s * args.ffn_hidden_size  # act_fn (gate) -> x
             + 2 * b * s * args.ffn_hidden_size  # act_fn (down)
         )
-        + (0 if args.no_dropout else (b * s * h))  # MLP -> Dropout
+        + (0 if args.hidden_dropout == 0.0 else (b * s * h))  # MLP -> Dropout
     )
     if verbose:
         print(
@@ -172,7 +174,7 @@ def compute_activation_memory(args, num_microbatches, verbose=False):
     ) / args.tensor_model_parallel_size
 
     # Dropout in embedding layer (pp_size microbatches in flight).
-    activation_memory += 0 if args.no_dropout else (
+    activation_memory += 0 if args.hidden_dropout == 0 else (
         args.seq_length
         * args.micro_batch_size
         * args.hidden_size
