@@ -19,10 +19,10 @@ module load ninja/1.11.1
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=1
-PIPELINE_PARALLEL_SIZE=2
-EXPART_PARALLEL_SIZE=4
-USE_GROUPED=True
+TENSOR_PARALLEL_SIZE=2
+PIPELINE_PARALLEL_SIZE=1
+EXPART_PARALLEL_SIZE=1
+USE_GROUPED=False
 
 # model config
 HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/hf-checkpoints/Mixtral-8x7B-v0.1
