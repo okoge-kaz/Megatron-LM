@@ -202,58 +202,114 @@ def visualize_memory_matrix(memory_consumption_matrix, gpu_memory_size: int) -> 
     plt.close()
 
 
-if __name__ == "__main__":
-    args = arg_parse()
+def find_trainable_parallel_configs(args, world_size: int) -> set:
+    """Find all (TP, CP, PP) configurations that have at least one trainable MBS setting.
 
+    Returns:
+        set: Set of (TP, CP, PP) tuples that have at least one trainable configuration
+    """
     TENSOR_PARALLEL_SIZES = [1, 2, 4, 8]
     CONTEXT_PARALLEL_SIZES = [1, 2, 4, 8]
     PIPELINE_PARALLEL_SIZES = generate_pipeline_parallel_sizes(args.num_layers)
-    # print(f"PIPELINE_PARALLEL_SIZES: {PIPELINE_PARALLEL_SIZES}")
 
+    trainable_parallel_configs = set()
+
+    for tp_size, cp_size, pp_size in itertools.product(
+        TENSOR_PARALLEL_SIZES, CONTEXT_PARALLEL_SIZES, PIPELINE_PARALLEL_SIZES
+    ):
+        if not is_within_the_num_gpu_per_node(args.num_per_node_gpus, tp_size, cp_size):
+            continue
+        if pp_size * tp_size * cp_size > world_size:
+            continue
+
+        args.tensor_model_parallel_size = tp_size
+        args.context_parallel_size = cp_size
+        args.pipeline_model_parallel_size = pp_size
+        args.data_parallel_size = world_size // (tp_size * cp_size * pp_size)
+
+        MICRO_BATCH_SIZES = generate_micro_batch_sizes(
+            args.global_batch_size, args.data_parallel_size
+        )
+
+        # Check if any MBS makes this parallel config trainable
+        for micro_batch_size in MICRO_BATCH_SIZES:
+            args.micro_batch_size = micro_batch_size
+            weight_and_optimizer_memory = compute_weight_and_optimizer_memory(args=args, verbose=False) / NUM_BYTES_IN_GIGA_BYTE
+            activation_memory = compute_activation_memory(args, None, False) / NUM_BYTES_IN_GIGA_BYTE
+            total_memory = weight_and_optimizer_memory + activation_memory
+
+            if total_memory <= args.gpu_memory_size:  # Both light yellow and light green cases
+                trainable_parallel_configs.add((tp_size, cp_size, pp_size))
+                break
+
+    return trainable_parallel_configs
+
+def generate_memory_matrix(args, min_world_size: int, max_world_size: int) -> dict:
+    """Generate memory consumption matrix containing only configurations where
+    the (TP, CP, PP) combination has at least one trainable MBS setting.
+
+    Args:
+        args: Command line arguments containing model configuration
+        min_world_size: Starting world size
+        max_world_size: Ending world size
+
+    Returns:
+        dict: Filtered memory consumption matrix
+    """
     memory_consumption_matrix = {}
     MIN_TRAINABLE_MODEL_PARALLEL_SIZE = 1 << 20
 
-    world_size = args.start_world_size
-    while world_size <= args.end_world_size:
-        memory_consumption_matrix[world_size] = {}
+    world_size = min_world_size
+    while world_size <= max_world_size:
+        # First find which parallel configurations are trainable for this world size
+        trainable_parallel_configs = find_trainable_parallel_configs(args, world_size)
 
-        for tp_size, cp_size, pp_size in itertools.product(
-            TENSOR_PARALLEL_SIZES, CONTEXT_PARALLEL_SIZES, PIPELINE_PARALLEL_SIZES
-        ):
-            if not is_within_the_num_gpu_per_node(
-                args.num_per_node_gpus, tp_size, cp_size
-            ):
-                continue
-            if pp_size * tp_size * cp_size > world_size:
-                continue
-            if pp_size * tp_size * cp_size > MIN_TRAINABLE_MODEL_PARALLEL_SIZE * 2:
-                continue
+        if trainable_parallel_configs:  # Only proceed if there are any trainable configs
+            trainable_configs = {}
 
-            args.tensor_model_parallel_size = tp_size
-            args.context_parallel_size = cp_size
-            args.pipeline_model_parallel_size = pp_size
-            args.data_parallel_size = world_size // (tp_size * cp_size * pp_size)
+            # Now generate the full matrix but only for trainable parallel configs
+            for tp_size, cp_size, pp_size in trainable_parallel_configs:
+                args.tensor_model_parallel_size = tp_size
+                args.context_parallel_size = cp_size
+                args.pipeline_model_parallel_size = pp_size
+                args.data_parallel_size = world_size // (tp_size * cp_size * pp_size)
 
-            MICRO_BATCH_SIZES = generate_micro_batch_sizes(
-                args.global_batch_size, args.data_parallel_size
-            )
+                MICRO_BATCH_SIZES = generate_micro_batch_sizes(
+                    args.global_batch_size, args.data_parallel_size
+                )
+                if tp_size * cp_size * pp_size > 2 * MIN_TRAINABLE_MODEL_PARALLEL_SIZE:
+                    continue
 
-            for micro_batch_size in MICRO_BATCH_SIZES:
-                args.micro_batch_size = micro_batch_size
-                weight_and_optimizer_memory = compute_weight_and_optimizer_memory(args=args, verbose=False) / NUM_BYTES_IN_GIGA_BYTE
-                activation_memory = compute_activation_memory(args, None, False) / NUM_BYTES_IN_GIGA_BYTE
-                total_memory = weight_and_optimizer_memory + activation_memory
+                for micro_batch_size in MICRO_BATCH_SIZES:
+                    args.micro_batch_size = micro_batch_size
+                    weight_and_optimizer_memory = compute_weight_and_optimizer_memory(args=args, verbose=False) / NUM_BYTES_IN_GIGA_BYTE
+                    activation_memory = compute_activation_memory(args, None, False) / NUM_BYTES_IN_GIGA_BYTE
+                    total_memory = total_memory = weight_and_optimizer_memory + activation_memory
 
-                memory_consumption_matrix[world_size][(tp_size, cp_size, pp_size, micro_batch_size)] = total_memory
-                if is_trainable(total_memory, args.gpu_memory_size):
+                    trainable_configs[(tp_size, cp_size, pp_size, micro_batch_size)] = total_memory
+
                     if tp_size * cp_size * pp_size < MIN_TRAINABLE_MODEL_PARALLEL_SIZE:
-                        MIN_TRAINABLE_MODEL_PARALLEL_SIZE = tp_size * cp_size * pp_size
-                else:
-                    # break micro_batch_size increment
-                    break
+                        if is_trainable(total_memory, args.gpu_memory_size):
+                            MIN_TRAINABLE_MODEL_PARALLEL_SIZE = tp_size * cp_size * pp_size
+
+                    if total_memory > args.gpu_memory_size:
+                        break
+
+            memory_consumption_matrix[world_size] = trainable_configs
 
         world_size *= 2
-    # print(memory_consumption_matrix)
+
+    return memory_consumption_matrix
+
+
+if __name__ == "__main__":
+    args = arg_parse()
+
+    memory_consumption_matrix = generate_memory_matrix(
+        args=args,
+        min_world_size=args.start_world_size,
+        max_world_size=args.end_world_size
+    )
 
     # Visualize the memory consumption matrix
     visualize_memory_matrix(

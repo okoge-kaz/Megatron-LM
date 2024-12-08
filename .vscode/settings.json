@@ -4,6 +4,8 @@
     "GIGA",
     "layernorm",
     "layernorms",
+    "lightcoral",
+    "lightgreen",
     "margs",
     "microbatches",
     "microbatehes",
@@ -13,7 +15,8 @@
     "swiglu",
     "TFLOP",
     "TSUBAME",
-    "wavelen"
+    "wavelen",
+    "xticks"
   ],
   "files.watcherExclude": {
     "**/.git/objects/**": true,

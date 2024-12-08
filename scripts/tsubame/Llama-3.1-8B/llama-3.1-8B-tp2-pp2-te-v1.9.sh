@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
-#$ -l node_f=8
-#$ -l h_rt=00:01:00:00
+#$ -l node_f=1
+#$ -l h_rt=00:02:00:00
 #$ -o outputs/Llama-3.1-8b-MLSys25/$JOB_ID.log
 #$ -e outputs/Llama-3.1-8b-MLSys25/$JOB_ID.log
 #$ -p -3
@@ -48,7 +48,7 @@ NUM_KEY_VALUE_HEADS=8
 SEQ_LENGTH=8192
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=2
+TENSOR_PARALLEL_SIZE=4
 CONTEXT_PARALLEL_SIZE=1
 PIPELINE_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
@@ -57,7 +57,7 @@ PIPLINE_MODEL_CHUNKS=1
 LAYERS_PER_VIRTUAL_PIPELINE_STAGE=$((${NUM_LAYERS} / ${PIPELINE_PARALLEL_SIZE} / ${PIPLINE_MODEL_CHUNKS}))
 
 # training config
-MICRO_BATCH_SIZE=2
+MICRO_BATCH_SIZE=1
 GLOBAL_BATCH_SIZE=1024
 TRAIN_STEPS=25000
 LR_DECAY_ITERS=25000
@@ -433,5 +433,5 @@ mpirun -np $NUM_GPUS \
   --log-straggler \
   --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "ABCI3.0" \
+  --wandb-project "Megatron-LM-v0.9" \
   --wandb-entity "okoge"
