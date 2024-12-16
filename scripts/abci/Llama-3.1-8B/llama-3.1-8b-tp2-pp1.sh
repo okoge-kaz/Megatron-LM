@@ -1,8 +1,8 @@
 #!/bin/sh
 #PBS -q rt_HF
 #PBS -N llama-3.1-8b
-#PBS -l select=2:ncpus=192:ngpus=8
-#PBS -l walltime=1:00:00
+#PBS -l select=1:ncpus=192:ngpus=8
+#PBS -l walltime=5:00:00
 #PBS -j oe
 #PBS -koed
 #PBS -V
@@ -154,7 +154,7 @@ if [[ ${PIPELINE_MODEL_CHUNKS} -gt 1 ]]; then
 fi
 
 # timer (profiling)
-LOG_TIMER=False
+LOG_TIMER=True
 
 TIMER_ARGS="--log-throughput"
 
@@ -264,6 +264,14 @@ mpirun -np $NUM_GPUS \
   --use-mpi \
   --use-z-loss \
   ${TIMER_ARGS} \
+  --torch-profile \
+  --torch-profile-active 2 \
+  --torch-profile-record-shapes \
+  --torch-profile-profile-memory \
+  --torch-profile-with-stack \
+  --torch-profile-with-flops \
+  --torch-profile-with-modules \
+  --tensorboard-dir ${TENSORBOARD_DIR} \
   --log-straggler \
   --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
