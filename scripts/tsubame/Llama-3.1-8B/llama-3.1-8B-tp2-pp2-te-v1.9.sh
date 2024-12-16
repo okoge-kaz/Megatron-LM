@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=1
-#$ -l h_rt=00:00:30:00
+#$ -l h_rt=00:02:00:00
 #$ -o outputs/Llama-3.1-8b-MLSys25/$JOB_ID.log
 #$ -e outputs/Llama-3.1-8b-MLSys25/$JOB_ID.log
 #$ -p -3
@@ -15,7 +15,7 @@ module load ylab/nccl/cuda-12.4/2.21.5
 module load ylab/hpcx/2.17.1
 module load ninja/1.11.1
 
-# swich virtual env
+# switch virtual env
 source .env/bin/activate
 
 # distributed settings
@@ -48,7 +48,7 @@ NUM_KEY_VALUE_HEADS=8
 SEQ_LENGTH=8192
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=2
+TENSOR_PARALLEL_SIZE=4
 CONTEXT_PARALLEL_SIZE=1
 PIPELINE_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
@@ -327,7 +327,7 @@ if [[ ${PIPLINE_MODEL_CHUNKS} -gt 1 ]]; then
 fi
 
 # timer (profiling)
-LOG_TIMER=False
+LOG_TIMER=True
 
 TIMER_ARGS="--log-throughput"
 
@@ -389,8 +389,6 @@ mpirun -np $NUM_GPUS \
   --train-iters ${TRAIN_STEPS} \
   --tokenizer-type Llama3Tokenizer \
   --tokenizer-model ${TOKENIZER_MODEL} \
-  --reset-position-ids \
-  --reset-attention-mask \
   ${CHECKPOINT_ARGS} \
   --save ${CHECKPOINT_SAVE_DIR} \
   --data-path ${TRAIN_DATA_PATH} \
@@ -439,8 +437,16 @@ mpirun -np $NUM_GPUS \
   --use-mpi \
   --use-z-loss \
   ${TIMER_ARGS} \
+  --torch-profile \
+  --torch-profile-active 2 \
+  --torch-profile-record-shapes \
+  --torch-profile-profile-memory \
+  --torch-profile-with-stack \
+  --torch-profile-with-flops \
+  --torch-profile-with-modules \
+  --tensorboard-dir ${TENSORBOARD_DIR} \
   --log-straggler \
   --disable-straggler-on-startup \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "GTC25" \
+  --wandb-project "Megatron-LM-v0.9" \
   --wandb-entity "okoge"

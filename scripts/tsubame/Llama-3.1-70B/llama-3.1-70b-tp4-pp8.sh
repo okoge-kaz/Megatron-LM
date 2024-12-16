@@ -1,6 +1,6 @@
 #!/bin/sh
 #$ -cwd
-#$ -l node_f=32
+#$ -l node_f=16
 #$ -l h_rt=00:00:30:00
 #$ -o outputs/Llama-3.1-70b-MLSys25/$JOB_ID.log
 #$ -e outputs/Llama-3.1-70b-MLSys25/$JOB_ID.log
@@ -49,8 +49,8 @@ SEQ_LENGTH=8192
 
 # distributed settings
 TENSOR_PARALLEL_SIZE=4
-CONTEXT_PARALLEL_SIZE=4
-PIPELINE_PARALLEL_SIZE=2
+CONTEXT_PARALLEL_SIZE=1
+PIPELINE_PARALLEL_SIZE=16
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
 PIPLINE_MODEL_CHUNKS=1
@@ -423,5 +423,5 @@ mpirun -np $NUM_GPUS \
   --use-z-loss \
   ${TIMER_ARGS} \
   --wandb-name ${JOB_NAME} \
-  --wandb-project "GTC25" \
+  --wandb-project "Megatron-LM-v0.9" \
   --wandb-entity "okoge"
