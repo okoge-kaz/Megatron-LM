@@ -4,7 +4,7 @@
 #$ -l h_rt=1:00:00
 #$ -p -5
 
-# priotiry: -5: normal, -4: high, -3: highest
+# priority: -5: normal, -4: high, -3: highest
 
 # Load modules
 module use /gs/fs/tga-NII-LLM/modules/modulefiles
@@ -35,7 +35,7 @@ cd apex
 pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
 
 # transformer engine (v1.11 support flash-atten-v3)
-pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.11
+pip install git+https://github.com/NVIDIA/TransformerEngine.git@v1.12
 
 # flash-atten
 cd ..

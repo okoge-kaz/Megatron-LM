@@ -15,11 +15,11 @@ module load ylab/nccl/cuda-12.4/2.21.5
 module load ylab/hpcx/2.17.1
 module load ninja/1.11.1
 
-# swich virtual env
-source .env/bin/activate
+# switch virtual env
+source .env_pytorch_mpi/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=1
+TENSOR_PARALLEL_SIZE=2
 PIPELINE_PARALLEL_SIZE=1
 
 # model config
