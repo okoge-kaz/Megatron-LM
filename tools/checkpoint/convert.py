@@ -6,6 +6,7 @@ import torch.multiprocessing as mp
 import sys
 import traceback
 import os
+import torch
 
 # A loader is a python file with at least two functions
 # - add_arguments - takes in a parser and adds any arguments needed
@@ -114,6 +115,9 @@ def load_plugin(plugin_type, name):
 
 
 def main():
+    if not torch.cuda.is_initialized():
+        torch.cuda.init()  # avoid cuda initialization error
+
     parser = argparse.ArgumentParser(description="Megatron Checkpoint Converter Arguments",
                                      allow_abbrev=False, conflict_handler='resolve')
 
@@ -171,4 +175,5 @@ def main():
 
 
 if __name__ == '__main__':
+    torch.multiprocessing.set_start_method(method='spawn')
     main()
