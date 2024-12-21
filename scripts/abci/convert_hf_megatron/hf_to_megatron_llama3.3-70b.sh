@@ -2,15 +2,16 @@
 #PBS -q rt_HF
 #PBS -N hf-to-megatron
 #PBS -l select=1:ncpus=192:ngpus=8
-#PBS -l walltime=1:00:00
+#PBS -l walltime=3:00:00
 #PBS -j oe
 #PBS -koed
 #PBS -V
-#PBS -o outputs/convert/hf-to-megatron/
-#PBS -P gag51395
+#PBS -o outputs/hf-megatron/convert_llama3.3-70b/
+#PBS -P gcg51558
+
+set -e
 
 cd $PBS_O_WORKDIR
-mkdir -p outputs/convert/hf-to-megatron
 
 echo "Nodes allocated to this job:"
 cat $PBS_NODEFILE
@@ -30,13 +31,15 @@ TENSOR_PARALLEL_SIZE=4
 PIPELINE_PARALLEL_SIZE=4
 
 # model config
-HF_CHECKPOINT_DIR=/groups/gag51395/hf_checkpoints/Meta-Llama-3-70B
-MEGATRON_CHECKPOINT_DIR=/groups/gag51395/checkpoints/hf-to-megatron/Llama-3-70b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+HF_CHECKPOINT_DIR=/groups/gag51395/hf_checkpoints/Llama-3.3-70B-Instruct
+MEGATRON_CHECKPOINT_DIR=/groups/gag51395/checkpoints/hf-to-megatron/Llama-3.3-70b-Instruct/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
 
 mkdir -p ${MEGATRON_CHECKPOINT_DIR}
 
 # tokenizer config
-TOKENIZER_MODEL=/groups/gag51395/hf_checkpoints/Meta-Llama-3-70B/tokenizer.json
+TOKENIZER_MODEL=/groups/gag51395/hf_checkpoints/Meta-Llama-3.1-70B/tokenizer.json
+
+export CUDA_LAUNCH_BLOCKING=1
 
 # convert
 python tools/checkpoint/convert.py \

@@ -1,25 +1,32 @@
-#!/bin/bash
-#$ -l rt_AF=1
-#$ -l h_rt=0:5:00:00
-#$ -j y
-#$ -o outputs/megatron-to-hf/
-#$ -cwd
+#!/bin/sh
+#PBS -q rt_HF
+#PBS -N megatron-to-hf
+#PBS -l select=1:ncpus=192:ngpus=8
+#PBS -l walltime=1:00:00
+#PBS -j oe
+#PBS -koed
+#PBS -V
+#PBS -o outputs/convert/megatron-to-hf/
+#PBS -P gag51395
 
-# Load modules
+cd $PBS_O_WORKDIR
+mkdir -p outputs/convert/hf-to-megatron
+
+echo "Nodes allocated to this job:"
+cat $PBS_NODEFILE
+
 source /etc/profile.d/modules.sh
-module use /bb/llm/gaf51275/modules/modulefiles
+module use /groups/gag51395/modules/modulefiles
 
-module load cuda/12.1/12.1.1
-module load cudnn/cuda-12.1/9.0.0
-module load nccl/2.20.5
-module load hpcx/2.12
-module load gcc/11.4.0
+module load cuda/12.4
+module load cudnn/9.1.1
+module load nccl/2.21.5
+module load hpcx/2.18.1
 
-# switch virtual env
 source .env/bin/activate
 
 # distributed settings
-TENSOR_PARALLEL_SIZE=4
+TENSOR_PARALLEL_SIZE=2
 PIPELINE_PARALLEL_SIZE=1
 
 # iteration settings
@@ -27,15 +34,14 @@ START_ITERATION=15000
 END_ITERATION=30000
 STEP=2500
 
-
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3.1-swallow-8b-v0.2/tp2-pp2-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+MEGATRON_CHECKPOINT_DIR=/groups/gag51395/checkpoints/Llama-3.1-swallow-8b-v0.2/tp2-pp1-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
 
 # tokenizer config
-TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3.1-8B
+TOKENIZER_MODEL_DIR=/groups/gag51395/hf_checkpoints/Meta-Llama-3.1-8B
 
 # hf checkpoint dir base
-HF_CHECKPOINT_DIR_BASE=/bb/llm/gaf51275/2024/checkpoints/megatron-to-hf/Llama-3.1-swallow-8b-v0.2/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
+HF_CHECKPOINT_DIR_BASE=/groups/gag51395/checkpoints/megatron-to-hf/Llama-3.1-swallow-8b-v0.2/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
 
 mkdir -p ${HF_CHECKPOINT_DIR_BASE}
 
@@ -63,7 +69,7 @@ for ITERATION in $(seq $START_ITERATION $STEP $END_ITERATION); do
     --save-dtype bfloat16 \
     --loader-transformer-impl transformer_engine \
     --true-vocab-size 128256 \
-    --megatron-path /bb/llm/gaf51275/2024/Megatron-LM-v0.8 \
+    --megatron-path /groups/gag51395/src/fujii/Megatron-LM-v0.9 \
     --llama-3-1
 
   # reset checkpoint iteration

@@ -1,14 +1,16 @@
 #!/bin/sh
 #PBS -q rt_HF
-#PBS -N convert
-#PBS -l select=1:ncpus=192
+#PBS -N hf-to-megatron
+#PBS -l select=1:ncpus=192:ngpus=8
 #PBS -l walltime=1:00:00
 #PBS -j oe
-#PBS -o outputs/hf-megatron/convert_llama3.1-70b/$PBS_JOBID.log
-#PBS -P gcg51558
+#PBS -koed
+#PBS -V
+#PBS -o outputs/convert/hf-to-megatron/
+#PBS -P gag51395
 
 cd $PBS_O_WORKDIR
-mkdir -p outputs/hf-megatron/convert_llama3.1-70b/
+mkdir -p outputs/convert/hf-to-megatron
 
 echo "Nodes allocated to this job:"
 cat $PBS_NODEFILE

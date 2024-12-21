@@ -1,21 +1,28 @@
-#!/bin/bash
-#$ -l rt_AF=1
-#$ -l h_rt=0:00:30:00
-#$ -j y
-#$ -o outputs/megatron-to-hf/
-#$ -cwd
+#!/bin/sh
+#PBS -q rt_HF
+#PBS -N tp-pp-change
+#PBS -l select=1:ncpus=192:ngpus=8
+#PBS -l walltime=1:00:00
+#PBS -j oe
+#PBS -koed
+#PBS -V
+#PBS -o outputs/tp-pp/
+#PBS -P gag51395
 
-# Load modules
+cd $PBS_O_WORKDIR
+mkdir -p outputs/tp-pp
+
+echo "Nodes allocated to this job:"
+cat $PBS_NODEFILE
+
 source /etc/profile.d/modules.sh
-module use /bb/llm/gaf51275/modules/modulefiles
+module use /groups/gag51395/modules/modulefiles
 
-module load cuda/12.1/12.1.1
-module load cudnn/cuda-12.1/9.0.0
-module load nccl/2.20.5
-module load hpcx/2.12
-module load gcc/11.4.0
+module load cuda/12.4
+module load cudnn/9.1.1
+module load nccl/2.21.5
+module load hpcx/2.18.1
 
-# swich virtual env
 source .env/bin/activate
 
 # distributed settings
@@ -28,11 +35,9 @@ TARGET_PIPELINE_PARALLEL_SIZE=2
 ITERATION=2500
 FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
 
-EXPERIMENT=fineweb-edu
-
 # model config
-MEGATRON_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/${EXPERIMENT}/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
-TARGET_CHECKPOINT_DIR=/bb/llm/gaf51275/2024/checkpoints/Llama-3-8b/${EXPERIMENT}/tp2-pp2-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1/
+MEGATRON_CHECKPOINT_DIR=/groups/gag51395/checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+TARGET_CHECKPOINT_DIR=/groups/gag51395/checkpoints/Llama-3.1-8b/tp${TARGET_TENSOR_PARALLEL_SIZE}-pp${TARGET_PIPELINE_PARALLEL_SIZE}/LR2.5E-5-MINLR2.5E-6-WD0.1
 
 mkdir -p ${TARGET_CHECKPOINT_DIR}
 
@@ -41,7 +46,7 @@ CURRENT_ITERATION=$(cat "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteratio
 echo $ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
 
 # tokenizer config
-TOKENIZER_MODEL_DIR=/bb/llm/gaf51275/hf-checkpoints/Meta-Llama-3-70B
+TOKENIZER_MODEL_DIR=/groups/gag51395/hf_checkpoints/Meta-Llama-3.1-8B
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 # convert
@@ -56,7 +61,7 @@ python tools/checkpoint/convert.py \
   --position-embedding-type rope \
   --loader-transformer-impl transformer_engine \
   --saver-transformer-impl transformer_engine \
-  --megatron-path /bb/llm/gaf51275/2024/Megatron-LM-latest
+  --megatron-path /groups/gag51395/src/fujii/Megatron-LM-v0.9
 
 # change checkpoint iteration
 echo $CURRENT_ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
