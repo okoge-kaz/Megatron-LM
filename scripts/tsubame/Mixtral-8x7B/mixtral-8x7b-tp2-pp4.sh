@@ -156,8 +156,6 @@ mpirun -np $NUM_GPUS \
   --train-iters ${TRAIN_STEPS} \
   --tokenizer-type Llama2Tokenizer \
   --tokenizer-model ${TOKENIZER_MODEL} \
-  --reset-position-ids \
-  --reset-attention-mask \
   ${CHECKPOINT_ARGS} \
   --save ${CHECKPOINT_SAVE_DIR} \
   --data-path ${TRAIN_DATA_PATH} \
@@ -200,6 +198,7 @@ mpirun -np $NUM_GPUS \
   --use-mpi \
   --use-z-loss \
   --log-throughput \
+  --moe-per-layer-logging \
   --wandb-name ${JOB_NAME} \
   --wandb-project "SC25" \
   --wandb-entity "okoge"
