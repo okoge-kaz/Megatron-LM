@@ -6,7 +6,7 @@
 #PBS -j oe
 #PBS -koed
 #PBS -V
-#PBS -o outputs/hf-megatron/convert_llama3.3-70b/
+#PBS -o outputs/convert/hf-to-megatron/
 #PBS -P gcg51558
 
 set -e
