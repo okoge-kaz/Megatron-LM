@@ -24,7 +24,7 @@ source .env/bin/activate
 pip install --upgrade pip
 pip install --upgrade wheel cmake ninja packaging
 
-# install nvidia pytorch
+# install pytorch
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 
 # Install packages
