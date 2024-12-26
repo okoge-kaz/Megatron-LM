@@ -1,8 +1,8 @@
 #!/bin/sh
 #PBS -q rt_HF
 #PBS -N megatron-to-hf
-#PBS -l select=1:ncpus=192:ngpus=8
-#PBS -l walltime=1:00:00
+#PBS -l select=4:ncpus=192:ngpus=8
+#PBS -l walltime=0:50:00
 #PBS -j oe
 #PBS -koed
 #PBS -V
