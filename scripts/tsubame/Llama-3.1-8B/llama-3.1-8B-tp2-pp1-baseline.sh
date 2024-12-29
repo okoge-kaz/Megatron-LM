@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
 #$ -l node_f=8
-#$ -l h_rt=00:54:50:00
+#$ -l h_rt=02:10:50:00
 #$ -o outputs/Llama-3.1-8b-finemath/$JOB_ID.log
 #$ -e outputs/Llama-3.1-8b-finemath/$JOB_ID.log
 #$ -p -3
@@ -74,7 +74,7 @@ GRAD_CLIP=1
 # model config
 TOKENIZER_MODEL=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3.1-8B/tokenizer.json
 CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/hf-to-megatron/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}
-CHECKPOINT_SAVE_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b-finemath/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
+CHECKPOINT_SAVE_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b-baseline/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR${LR}-MINLR${MIN_LR}-WD${WEIGHT_DECAY}
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
@@ -84,56 +84,53 @@ TRAIN_DATA_PATH=""
 # Japanese Wikipedia
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 3382423156 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/ja_wiki_merged_text_document"
 
-# Japanese llm filter top10
+# Japanese LLM filter top10
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 19423361558 /gs/fs/tgh-24IDU/datasets/Llama-3.1-transformers/filter-v2-llm-top10/dump_0_text_document"
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 14535812000 /gs/fs/tgh-24IDU/datasets/Llama-3.1-transformers/filter-v2-llm-top10/dump_1_text_document"
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 27040695169 /gs/fs/tgh-24IDU/datasets/Llama-3.1-transformers/filter-v2-llm-top10/dump_2_text_document"
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 23985972142 /gs/fs/tgh-24IDU/datasets/Llama-3.1-transformers/filter-v2-llm-top10/dump_3_text_document"
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 8109645389 /gs/fs/tgh-24IDU/datasets/Llama-3.1-transformers/filter-v2-llm-top10/dump_4_text_document"
 
-# Japanese filter Wikipedia top10
+# Japanese Wikipedia filter top10
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 8729168518 /gs/fs/tgh-24IDU/datasets/Llama-3.1-transformers/filter-v2-wiki-top10/dump_0_text_document"
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5143962780 /gs/fs/tgh-24IDU/datasets/Llama-3.1-transformers/filter-v2-wiki-top10/dump_1_text_document"
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 12335523317 /gs/fs/tgh-24IDU/datasets/Llama-3.1-transformers/filter-v2-wiki-top10/dump_2_text_document"
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 11297417571 /gs/fs/tgh-24IDU/datasets/Llama-3.1-transformers/filter-v2-wiki-top10/dump_3_text_document"
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 3133344302 /gs/fs/tgh-24IDU/datasets/Llama-3.1-transformers/filter-v2-wiki-top10/dump_4_text_document"
 
-# English Parallel Corpus
+# English - Japanese Parallel Corpus
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 882674099 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/default_plain_text_format_text_document"
 
 # English Wikipedia
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 4426952329 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/en_wiki_merged_train_text_document"
 
-# English cosmopedia
+# English Cosmopedia
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 2527156128 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_automathtext_train_text_document"
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 39884494 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_khanacademy_train_text_document"
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 189399130 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_openstax_train_text_document"
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1824516742 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_stanford_train_text_document"
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 5235630656 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_stories_train_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1653703231 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_web_samples_v1_train_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1346296769 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_web_samples_v2_train_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 2645925170 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_web_samples_v1_train_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 2154074830 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_web_samples_v2_train_text_document"
 TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 312753702 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/cosmopedia_wikihow_train_text_document"
 
 # English DCML
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 888590477 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_01_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 889333692.9 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_02_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 859331287.4 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_03_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 890023005.8 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_04_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 890511400 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_05_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 889222585.3 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_06_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 890314086.3 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_07_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 889913830.8 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_08_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 888449316.7 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_09_of_10_text_document"
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 888043037.7 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_10_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1067033136 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_01_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1067925601 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_02_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1031898250 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_03_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1068753339 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_04_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1069339810 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_05_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1067792181 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_06_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1069102872 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_07_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1068622240 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_08_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1066863628 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_09_of_10_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 1066375762 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/global-shard_10_of_10_text_document"
 
 # Code Stack v2 filtered
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 26000000000 /gs/fs/tgh-24IDU/datasets/Llama-3.1-transformers/stack-v2-filtered/stack_v2_python_compile_pylint_ja_or_en_text_document"
-
-# Math finemath
-TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 9579886495 /gs/fs/tga-NII-LLM/datasets/Meta-Llama-3_original_transformers-4.40.1/finemath-4plus_text_document"
+TRAIN_DATA_PATH="${TRAIN_DATA_PATH} 32000000000 /gs/fs/tgh-24IDU/datasets/Llama-3.1-transformers/stack-v2-filtered/stack_v2_python_compile_pylint_ja_or_en_text_document"
 
 # job name
-JOB_NAME="Llama-3.1-8b-finemath-TSUBAME-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
+JOB_NAME="Llama-3.1-8b-baseline-TSUBAME-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-DP=${DATA_PARALLEL_SIZE}-TP=${TENSOR_PARALLEL_SIZE}-PP=${PIPELINE_PARALLEL_SIZE}-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}-z-loss"
 
 # checkpoint load
 if [[ -f "${CHECKPOINT_SAVE_DIR}/latest_checkpointed_iteration.txt" ]]; then
