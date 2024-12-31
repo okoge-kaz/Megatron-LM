@@ -52,9 +52,9 @@ for ITERATION in $(seq $START_ITERATION $INCREMENT $END_ITERATION); do
   echo -e "Converting iteration ${ITERATION}\n"
 
   # model config
-  MEGATRON_DIST_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b-finemath/tp2-pp1-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
-  MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b-finemath/tp2-pp1-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1-no-dist
-  HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3.1-8b-finemath/tp2-pp1-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
+  MEGATRON_DIST_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b-baseline/tp2-pp1-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+  MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b-baseline/tp2-pp1-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1-no-dist
+  HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3.1-8b-baseline/tp2-pp1-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
   mkdir -p ${HF_CHECKPOINT_DIR}
   mkdir -p ${MEGATRON_CHECKPOINT_DIR}

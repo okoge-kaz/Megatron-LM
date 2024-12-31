@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
-#$ -l node_f=1
-#$ -l h_rt=2:00:00
+#$ -l node_f=8
+#$ -l h_rt=1:00:00
 #$ -o outputs/convert/megatron_hf/$JOB_ID.log
 #$ -e outputs/convert/megatron_hf/$JOB_ID.log
 #$ -p -3
@@ -44,20 +44,27 @@ PIPELINE_PARALLEL_SIZE=4
 CONTEXT_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
-START_ITERATION=7000
-END_ITERATION=7000
-INCREMENT=500
+START_ITERATION=3000
+END_ITERATION=6000
+INCREMENT=3000
 
 for ITERATION in $(seq $START_ITERATION $INCREMENT $END_ITERATION); do
   FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
-  MEGATRON_DIST_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.3-70b-Instruct/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}/dist-ckpt/iter_${FORMATTED_ITERATION}
-  MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.3-70b-Instruct/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}/torch-ckpt/iter_${FORMATTED_ITERATION}
+  echo -e "Converting checkpoint at iteration ${ITERATION}...\n"
+
+  MEGATRON_DIST_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.3-70B-Instruct/tp4-pp4-ct1/exp1-2/LR1.25E-5-MINLR1.25E-6-WD0.1
+  MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.3-70B-Instruct/tp4-pp4-ct1/exp1-2/LR1.25E-5-MINLR1.25E-6-WD0.1-no-dist
+  HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3.3-70B-Instruct/tp4-pp4-ct1/exp1-2/LR1.25E-5-MINLR1.25E-6-WD0.1/iter_${FORMATTED_ITERATION}
+
   mkdir -p ${MEGATRON_CHECKPOINT_DIR}
+  mkdir -p ${HF_CHECKPOINT_DIR}
 
   CURRENT_DIST_ITERATION=$(cat "${MEGATRON_DIST_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt")
   echo $ITERATION > "${MEGATRON_DIST_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
 
-  echo -e "Converting checkpoint at iteration ${ITERATION}...\n"
+  # tokenizer config
+  TOKENIZER_MODEL_DIR=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3.1-70B
+  TOKENIZER_MODEL=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3.1-70B/tokenizer.json
 
   # dist checkpoint -> megatron checkpoint
   mpirun -np $NUM_GPUS \
@@ -86,13 +93,13 @@ for ITERATION in $(seq $START_ITERATION $INCREMENT $END_ITERATION); do
     --global-batch-size 1024 \
     --tokenizer-type Llama3Tokenizer \
     --tokenizer-model ${TOKENIZER_MODEL} \
-    --train-iters 25000 \
+    --train-iters 30000 \
     --mock-data \
     --distributed-backend nccl \
-    --lr 1.75E-5 \
-    --min-lr 1.75E-6 \
+    --lr 1.25E-5 \
+    --min-lr 1.25E-6 \
     --lr-decay-style cosine \
-    --lr-decay-iters 25000 \
+    --lr-decay-iters 30000 \
     --lr-warmup-iters 1000 \
     --bf16 \
     --optimizer adam \
@@ -123,25 +130,20 @@ for ITERATION in $(seq $START_ITERATION $INCREMENT $END_ITERATION); do
   echo $CURRENT_DIST_ITERATION > "${MEGATRON_DIST_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
 
   # megatron (torch) -> hf
-  HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3.3-70b/LR1.75E-5-MINLR1.75E-6-WD0.1/iter_${FORMATTED_ITERATION}
-  mkdir -p ${HF_CHECKPOINT_DIR}
-
   CURRENT_ITERATION=$(cat "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt")
   echo $ITERATION > "${MEGATRON_CHECKPOINT_DIR}/latest_checkpointed_iteration.txt"
-
-  # tokenizer config
-  TOKENIZER_MODEL_DIR=/gs/bs/tga-NII-LLM/hf-checkpoints/Meta-Llama-3.1-70B
 
   # convert
   python tools/checkpoint/convert.py \
     --model-type GPT \
     --loader mcore \
     --saver llama3_hf \
-    --load-dir ${MEGATRON_CHECKPOINT_DIR} \
+    --load-dir ${MEGATRON_CHECKPOINT_DIR}/torch \
     --save-dir ${HF_CHECKPOINT_DIR} \
     --hf-tokenizer-path ${TOKENIZER_MODEL_DIR} \
     --save-dtype bfloat16 \
     --loader-transformer-impl transformer_engine \
+    --true-vocab-size 128256 \
     --llama-3-1 \
     --megatron-path /gs/bs/tga-NII-LLM/src/Megatron-LM-v0.9
 
