@@ -172,7 +172,6 @@ def _set_wandb_writer(args):
         }
         if args.wandb_offline:
             wandb_kwargs['mode'] = 'offline'
-        wandb.require("core")
         wandb.init(**wandb_kwargs)
         _GLOBAL_WANDB_WRITER = wandb
 
