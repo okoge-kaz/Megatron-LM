@@ -43,18 +43,18 @@ PIPELINE_PARALLEL_SIZE=1
 CONTEXT_PARALLEL_SIZE=1
 DATA_PARALLEL_SIZE=$((${NUM_GPUS} / (${TENSOR_PARALLEL_SIZE} * ${PIPELINE_PARALLEL_SIZE})))
 
-START_ITERATION=100
-END_ITERATION=100
-INCREMENT=500
+START_ITERATION=2500
+END_ITERATION=12500
+INCREMENT=2500
 
 for ITERATION in $(seq $START_ITERATION $INCREMENT $END_ITERATION); do
   FORMATTED_ITERATION=$(printf "%07d" $ITERATION)
   echo -e "Converting iteration ${ITERATION}\n"
 
   # model config
-  MEGATRON_DIST_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR2.5E-5-MINLR2.5E-6-WD0.1-v0.9.0
-  MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/LR2.5E-5-MINLR2.5E-6-WD0.1-v0.9.0-no-dist
-  HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3.1-8b/tp${TENSOR_PARALLEL_SIZE}-pp${PIPELINE_PARALLEL_SIZE}-ct${CONTEXT_PARALLEL_SIZE}/iter_${FORMATTED_ITERATION}
+  MEGATRON_DIST_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b-finemath/tp2-pp1-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1
+  MEGATRON_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/Llama-3.1-8b-finemath/tp2-pp1-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1-no-dist
+  HF_CHECKPOINT_DIR=/gs/bs/tga-NII-LLM/checkpoints/megatron-to-hf/Llama-3.1-8b-finemath/tp2-pp1-ct1/LR2.5E-5-MINLR2.5E-6-WD0.1/iter_${FORMATTED_ITERATION}
 
   mkdir -p ${HF_CHECKPOINT_DIR}
   mkdir -p ${MEGATRON_CHECKPOINT_DIR}
@@ -90,17 +90,17 @@ for ITERATION in $(seq $START_ITERATION $INCREMENT $END_ITERATION); do
     --load ${MEGATRON_DIST_CHECKPOINT_DIR} \
     --ckpt-convert-save ${MEGATRON_CHECKPOINT_DIR} \
     --use-mpi \
-    --micro-batch-size 1 \
-    --global-batch-size 1024 \
+    --micro-batch-size 2 \
+    --global-batch-size 512 \
     --tokenizer-type Llama3Tokenizer \
     --tokenizer-model ${TOKENIZER_MODEL} \
-    --train-iters 25000 \
+    --train-iters 12500 \
     --mock-data \
     --distributed-backend nccl \
     --lr 2.5E-5 \
     --min-lr 2.5E-6 \
     --lr-decay-style cosine \
-    --lr-decay-iters 25000 \
+    --lr-decay-iters 12500 \
     --lr-warmup-iters 1000 \
     --bf16 \
     --optimizer adam \
